@@ -43,7 +43,7 @@ async function studentSignUp() {
     class_name: classData.class_name
   });
 
-  currentStudent = { name, grade };
+  currentStudent = { name, grade, userId: authData.user.id };
   currentClassCode = code;
   currentClassName = classData.class_name;
   setStudentHeader(name);
@@ -73,7 +73,7 @@ async function studentSignIn() {
     return;
   }
 
-  currentStudent = { name: profile.name, grade: profile.grade };
+  currentStudent = { name: profile.name, grade: profile.grade, userId: data.user.id };
   currentClassCode = profile.class_code || '';
   currentClassName = profile.class_name || '';
   setStudentHeader(profile.name);
@@ -104,7 +104,7 @@ function setStudentHeader(name) {
   const { data: profile } = await sb.from('student_profiles')
     .select('*').eq('user_id', session.user.id).single();
   if (!profile) return;
-  currentStudent = { name: profile.name, grade: profile.grade };
+  currentStudent = { name: profile.name, grade: profile.grade, userId: session.user.id };
   currentClassCode = profile.class_code || '';
   currentClassName = profile.class_name || '';
   setStudentHeader(profile.name);

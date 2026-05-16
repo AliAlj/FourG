@@ -70,6 +70,7 @@ async function loadClasses() {
       </div>
     </div>`).join('');
   await loadLibraryAdmin();
+  await loadAssignmentsAdmin();
 }
 
 function copyCode(code) {
@@ -93,6 +94,7 @@ async function openClassDashboard(code, name) {
       <button class="btn-secondary" onclick="document.getElementById('studentsDashboard').style.display='none'">Close</button>
     </div>`;
 
+  await loadClassAnalytics(code);
   buildTeacherTabs(code);
   document.getElementById('studentsDashboard').scrollIntoView({ behavior: 'smooth' });
 }
