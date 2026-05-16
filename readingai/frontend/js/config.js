@@ -1,12 +1,9 @@
-const CONFIG = {
-  AZURE_KEY: "",
-  AZURE_REGION: "",
-  IBM_PROJECT_ID: "",
-  IBM_API_KEY: "",
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: ""
-};
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const AZURE_KEY = CONFIG.AZURE_KEY;
+const AZURE_REGION = CONFIG.AZURE_REGION;
+const IBM_API_KEY = CONFIG.IBM_API_KEY;
+const IBM_PROJECT_ID = CONFIG.IBM_PROJECT_ID;
+
+const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 let currentStudent = {};
 let currentClassCode = '';

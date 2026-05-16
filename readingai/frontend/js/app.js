@@ -33,7 +33,7 @@ function showScreen(id) {
 
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
-    showScreen('roleScreen');
+    if (!currentStudent.userId) showScreen('roleScreen');
   }, 2200);
 });
 
