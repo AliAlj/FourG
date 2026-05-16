@@ -22,6 +22,7 @@ async function loadLibraryBooks() {
       currentAssignments = (asgn || []).map(a => a.book_title.toLowerCase());
     } catch {}
   }
+  allBooks = allBooks.filter(b => currentAssignments.includes(b.title.toLowerCase()));
   document.getElementById('libraryLoading').style.display = 'none';
   renderLibrary(allBooks, currentLibraryFilter);
 }
@@ -43,40 +44,37 @@ function renderLibrary(books, gradeFilter) {
     ).join('');
   if (!filtered.length) {
     document.getElementById('libraryGrid').innerHTML =
-      '<div class="empty-state"><div class="icon">📚</div><p>No books available yet.</p></div>';
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center"><img src="assets/wormAi.png" alt="" style="width:90px;opacity:0.7;margin-bottom:1rem"><p style="font-size:1rem;font-weight:600;color:#aaa;margin:0">No books assigned yet.</p></div>';
     return;
   }
   document.getElementById('libraryGrid').innerHTML = filtered.map(book => {
     const idx = libraryBooks.indexOf(book);
-    const excerpt = book.text.substring(0, 110) + '…';
     const coverClass = `grade-${Math.min(book.grade, 7)}`;
-    const teacherBadge = book.source === 'teacher'
-      ? '<span class="source-teacher-badge">Teacher</span>' : '';
     const assignedBadge = currentAssignments.includes(book.title.toLowerCase())
-      ? '<span class="source-assigned-badge">📌 Assigned</span>' : '';
+      ? '<span class="source-assigned-badge" style="position:absolute;top:8px;right:8px;z-index:2">📌</span>' : '';
     const coverHtml = book.cover_url
       ? `<div class="book-card-img-container">
-          <img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">
+          ${assignedBadge}
+          <img src="${book.cover_url}" alt="${book.title}" onerror="this.parentElement.className='book-card-cover ${coverClass}'">
           <div class="book-card-img-overlay">
-            <span class="book-card-grade">Grade ${book.grade}</span>
-            <span class="book-card-topic">${book.topic || ''}</span>
+            <div class="book-card-title" style="color:white;margin:0 0 0.1rem">${book.title}</div>
+            ${book.author ? `<div class="book-card-author" style="color:rgba(255,255,255,0.8);margin:0">by ${book.author}</div>` : ''}
           </div>
          </div>`
-      : `<div class="book-card-cover ${coverClass}">
+      : `<div class="book-card-cover ${coverClass}" style="position:relative">
+          ${assignedBadge}
           <span class="book-card-grade">Grade ${book.grade}</span>
-          <span class="book-card-topic">${book.topic || ''}</span>
+          <div style="margin-top:auto">
+            <div class="book-card-title" style="color:white;margin:0 0 0.1rem">${book.title}</div>
+            ${book.author ? `<div class="book-card-author" style="color:rgba(255,255,255,0.75);margin:0">by ${book.author}</div>` : ''}
+          </div>
          </div>`;
     return `
       <div class="book-card" onclick="selectLibraryBook(${idx})">
         ${coverHtml}
-        <div class="book-card-body">
-          <div class="book-card-title">${book.title}${teacherBadge}${assignedBadge}</div>
-          ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
-          <div class="book-card-excerpt">${excerpt}</div>
-        </div>
-        <div class="book-card-footer" style="display:flex;gap:0.4rem">
+        <div class="book-card-footer" style="display:flex;gap:0.4rem;padding:0.7rem 0.9rem;border-top:1px solid #f0f0f0">
           <button class="book-card-read-btn" style="flex:1">Read this book</button>
-          <button onclick="event.stopPropagation();openBookwormFromLibrary(${idx})" style="padding:0.55rem 0.65rem;background:#2e7d32;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem" title="Chat with Bookworm">📚</button>
+          <button onclick="event.stopPropagation();openBookwormFromLibrary(${idx})" style="padding:0.55rem 0.65rem;background:#2e7d32;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem" title="Chat with Bookworm"><img src="assets/wormAi.png" alt="AI" style="width:1.1rem;height:1.1rem;object-fit:contain;display:block"></button>
         </div>
       </div>`;
   }).join('');
@@ -292,7 +290,7 @@ function hideAddBookForm() {
 async function addBook() {
   const title = document.getElementById('newBookTitle').value.trim();
   const author = document.getElementById('newBookAuthor').value.trim();
-  const grade = parseInt(document.getElementById('newBookGrade').value);
+  const grade = window.currentClassGrade || teacherClasses[0]?.grade || 4;
   const topic = document.getElementById('newBookTopic').value.trim();
   const text = document.getElementById('newBookText').value.trim();
   if (!title || !text) { alert('Please fill in the title and passage text.'); return; }

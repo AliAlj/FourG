@@ -328,10 +328,25 @@
           <label>Class name</label>
           <input type="text" id="newClassName" placeholder="e.g. Period 2 Reading or Mrs. Johnson Grade 4" />
         </div>
+        <div class="form-group">
+          <label>Grade level</label>
+          <select id="newClassGrade">
+            <option value="3">Grade 3</option>
+            <option value="4" selected>Grade 4</option>
+            <option value="5">Grade 5</option>
+            <option value="6">Grade 6</option>
+            <option value="7">Grade 7</option>
+          </select>
+        </div>
         <div style="display:flex;gap:0.6rem">
           <button class="btn-primary" onclick="createClass()" style="flex:1">Create class</button>
           <button class="btn-secondary" onclick="hideCreateClass()">Cancel</button>
         </div>
+      </div>
+
+      <div id="bookSuggestions" style="display:none;background:#f0f5ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <h3 style="font-size:0.95rem;font-weight:700;color:#1a3a5c;margin-bottom:0.75rem">📚 Suggested books for your class</h3>
+        <div id="bookSuggestionsList"></div>
       </div>
 
       <div id="classList"></div>
@@ -364,21 +379,9 @@
           <label>Author (optional)</label>
           <input type="text" id="newBookAuthor" placeholder="e.g. O. Henry" />
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
-          <div class="form-group">
-            <label>Grade level</label>
-            <select id="newBookGrade">
-              <option value="3">Grade 3</option>
-              <option value="4" selected>Grade 4</option>
-              <option value="5">Grade 5</option>
-              <option value="6">Grade 6</option>
-              <option value="7">Grade 7</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Topic / Genre</label>
-            <input type="text" id="newBookTopic" placeholder="e.g. Nature" />
-          </div>
+        <div class="form-group">
+          <label>Topic / Genre (optional)</label>
+          <input type="text" id="newBookTopic" placeholder="e.g. Nature" />
         </div>
         <div class="form-group">
           <label>Reading passage</label>

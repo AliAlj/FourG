@@ -43,13 +43,40 @@ function hideCreateClass() {
 
 async function createClass() {
   const name = document.getElementById('newClassName').value.trim();
+  const grade = parseInt(document.getElementById('newClassGrade').value);
   if (!name) { alert('Please enter a class name.'); return; }
   const { data: { user } } = await sb.auth.getUser();
   const code = generateCode();
-  const { error } = await sb.from('classes').insert({ teacher_id: user.id, class_name: name, class_code: code });
+  const { error } = await sb.from('classes').insert({ teacher_id: user.id, class_name: name, class_code: code, grade });
   if (error) { alert('Could not create class: ' + error.message); return; }
+  window.currentClassGrade = grade;
   hideCreateClass();
   await loadClasses();
+  showBookSuggestions(grade, code);
+}
+
+function showBookSuggestions(grade, classCode) {
+  const box = document.getElementById('bookSuggestions');
+  const list = document.getElementById('bookSuggestionsList');
+  const matches = passages.filter(p => p.grade === grade);
+  if (!matches.length) { box.style.display = 'none'; return; }
+  list.innerHTML = matches.map(p => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.75rem;background:white;border-radius:8px;margin-bottom:0.5rem;gap:1rem">
+      <div>
+        <div style="font-weight:700;font-size:0.88rem;color:#1a3a5c">${p.title}</div>
+        <div style="font-size:0.75rem;color:#888">Grade ${p.grade} · ${p.topic}</div>
+      </div>
+      <button onclick="quickAssign('${p.title.replace(/'/g,"\\'")}','${classCode}')" style="padding:0.35rem 0.8rem;background:#2e7d32;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">📌 Assign</button>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+async function quickAssign(title, classCode) {
+  const { data: { user } } = await sb.auth.getUser();
+  const { error } = await sb.from('assignments').insert({ teacher_id: user.id, class_code: classCode, book_title: title });
+  if (error) { alert('Could not assign book.'); return; }
+  alert(`"${title}" assigned to class!`);
+  await loadAssignmentsAdmin();
 }
 
 function generateCode() {
@@ -173,7 +200,7 @@ function openStudentDetail(session) {
     <div class="score-badge"><div class="num">${session.accuracy}</div><div class="lbl">Accuracy</div></div>
     <div class="score-badge"><div class="num">${session.fluency}</div><div class="lbl">Fluency</div></div>
     <div class="score-badge"><div class="num">${session.completeness}</div><div class="lbl">Completeness</div></div>
-    <div class="score-badge gold"><div class="num">${session.overall}</div><div class="lbl">Overall</div></div>`;
+    <div class="score-badge ${cls}"><div class="num">${session.overall}</div><div class="lbl">Overall</div></div>`;
 
   const words = session.difficult_words || [];
   if (words.length > 0) {
