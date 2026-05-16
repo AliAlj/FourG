@@ -767,8 +767,8 @@ input:focus, select:focus {
 .book-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.12); border-color: #1a3a5c; }
 
 .book-card-cover {
-  padding: 1.1rem 1rem 0.9rem;
-  min-height: 72px;
+  padding: 1rem;
+  height: 260px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -795,10 +795,8 @@ input:focus, select:focus {
 
 .book-card-topic { color: rgba(255,255,255,0.85); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
 
-.book-card-body { padding: 0.9rem; flex: 1; }
 .book-card-title { font-size: 0.9rem; font-weight: 800; color: #1a3a5c; margin-bottom: 0.2rem; line-height: 1.3; }
 .book-card-author { font-size: 0.72rem; color: #888; margin-bottom: 0.5rem; }
-.book-card-excerpt { font-size: 0.75rem; color: #666; line-height: 1.5; }
 
 .book-card-footer { padding: 0.7rem 0.9rem; border-top: 1px solid #f0f0f0; }
 
@@ -942,7 +940,7 @@ input:focus, select:focus {
 
 .book-card-img-container {
   position: relative;
-  height: 140px;
+  height: 260px;
   overflow: hidden;
 }
 
@@ -958,8 +956,8 @@ input:focus, select:focus {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 0.5rem 0.75rem;
-  background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+  padding: 1.5rem 0.75rem 0.75rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
 }
 body.splash-active,
 body.role-active {
@@ -1080,6 +1078,95 @@ body.role-active header {
   font-size: clamp(1.7rem, 2.4vw, 2.5rem);
 }
 
+/* ── Bookworm chat box ── */
+.bookworm-panel {
+  position: fixed;
+  bottom: 104px;
+  right: 24px;
+  width: 340px;
+  height: 460px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  display: flex;
+  flex-direction: column;
+  z-index: 9998;
+  overflow: hidden;
+  transform: scale(0.9) translateY(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.bookworm-panel.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.bookworm-header {
+  background: #2e7d32;
+  color: white;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+.bookworm-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.bookworm-bubble {
+  max-width: 82%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.bookworm-bubble.worm {
+  background: #e8f5e9;
+  color: #1b5e20;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.bookworm-bubble.user {
+  background: #1a3a5c;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.bookworm-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+.bookworm-input {
+  flex: 1;
+  border: 1.5px solid #ddd;
+  border-radius: 20px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+.bookworm-input:focus { border-color: #2e7d32; }
+.bookworm-mic-btn {
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
 .bookworm-mic-btn.listening { background: #e74c3c; animation: pulse 1s infinite; }
 
 .bookworm-send-btn {
@@ -1111,6 +1198,27 @@ body.role-active header {
 }
 
 .btn-bookworm:hover { background: #1b5e20; }
+
+#wormFab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  background: #2e7d32;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  z-index: 9999;
+  transition: background 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#wormFab:hover { background: #1b5e20; transform: scale(1.08); }
+#wormFab img { width: 100%; height: 100%; object-fit: contain; }
 
 /* Progress screen */
 .progress-loading { color: #aaa; font-size: 0.88rem; padding: 1rem 0; }

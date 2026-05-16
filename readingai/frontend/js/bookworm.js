@@ -32,6 +32,17 @@ function openBookwormFromLibrary(idx) {
   openBookworm({ title: book.title, passage: book.text, score: null, difficultWords: [], studentName: currentStudent.name, grade: currentStudent.grade });
 }
 
+function openBookwormHelp() {
+  bookwormContext = null;
+  bookwormHistory = [];
+  document.getElementById('bookwormMessages').innerHTML = '';
+  document.getElementById('bookwormPanel').classList.add('open');
+  const greeting = "Hi! I'm BookWorm, your reading helper. How can I help you today?";
+  addBookwormBubble(greeting, 'worm');
+  bookwormHistory.push({ role: 'assistant', content: greeting });
+  bookwormSpeak(greeting);
+}
+
 function closeBookworm() {
   document.getElementById('bookwormPanel').classList.remove('open');
   stopBookwormListening();
