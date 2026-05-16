@@ -229,6 +229,25 @@ input:focus, select:focus {
   border-left: 4px solid #1a3a5c;
 }
 
+.passage-word {
+  display: inline;
+  border-radius: 4px;
+  padding: 0.05em 0.15em;
+  transition: background 0.2s, color 0.2s;
+}
+.word-good {
+  background: #c8f5d0;
+  color: #1b5e20;
+}
+.word-ok {
+  background: #fff3cd;
+  color: #7a5800;
+}
+.word-bad {
+  background: #ffd5d5;
+  color: #b71c1c;
+}
+
 .passage-chips {
   display: flex;
   gap: 0.5rem;
@@ -1394,4 +1413,105 @@ body.role-active header {
 
 .welcome-role-btn:hover {
   transform: translateY(-3px);
+}
+
+/* Illustrated badge */
+.source-illustrated-badge {
+  display: inline-block;
+  background: #e8f4e8;
+  color: #2e7d32;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+/* Book reader screen */
+.reader-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.reader-progress-wrap {
+  flex: 1;
+  height: 6px;
+  background: #e8eef5;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.reader-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1a3a5c, #2196f3);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.reader-page-label {
+  font-size: 0.78rem;
+  color: #888;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.reader-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a3a5c;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.reader-image-wrap {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background: #f0f7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.reader-image {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+}
+
+.reader-text {
+  font-size: 1.1rem;
+  line-height: 2;
+  color: #1a1a1a;
+  background: #f8f9ff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border-left: 4px solid #1a3a5c;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.reader-text .passage-word {
+  font-weight: 500;
+}
+
+.reader-score-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.reader-score-chip {
+  flex: 1;
+  background: #f8f9ff;
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  padding: 0.65rem 0.5rem;
+  text-align: center;
 }

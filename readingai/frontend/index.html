@@ -222,6 +222,48 @@
   </div>
 </div>
 
+<div class="screen" id="bookReaderScreen">
+  <div class="container">
+    <div class="card" style="padding:1.25rem">
+      <div class="reader-nav">
+        <button class="btn-secondary" onclick="exitBookReader()" style="font-size:0.78rem;padding:0.35rem 0.8rem">&#8592; Library</button>
+        <div class="reader-progress-wrap">
+          <div class="reader-progress-bar" id="readerProgressBar"></div>
+        </div>
+        <span class="reader-page-label" id="readerPageLabel">Page 1 of 4</span>
+      </div>
+      <div class="reader-title" id="readerTitle"></div>
+      <div class="reader-image-wrap">
+        <img class="reader-image" id="readerImage" src="" alt="" />
+      </div>
+      <div class="reader-text" id="readerText"></div>
+      <div class="mic-section">
+        <button class="mic-btn" id="readerMicBtn" onclick="toggleReaderRecording()">🎙️</button>
+        <div class="mic-label" id="readerMicLabel">Tap the mic and read the page out loud</div>
+        <div class="transcript-box" id="readerTranscript" style="display:none"></div>
+      </div>
+      <div id="readerFeedback" style="display:none">
+        <div class="reader-score-row" id="readerScoreRow"></div>
+        <button class="btn-primary" id="readerNextBtn" onclick="readerNextPage()">Next Page →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="bookFinishScreen">
+  <div class="container">
+    <div class="card" style="text-align:center">
+      <div style="font-size:4rem;margin-bottom:0.5rem">🎉</div>
+      <h2 id="finishTitle" style="margin-bottom:0.5rem"></h2>
+      <p class="subtitle">You finished the whole book!</p>
+      <div class="reader-score-row" id="finishScores" style="justify-content:center;margin:1.5rem 0"></div>
+      <div id="finishMessage" style="font-size:1rem;font-weight:700;color:#2e7d32;margin-bottom:1.5rem"></div>
+      <button class="btn-primary" onclick="openBookwormAfterReading()" style="margin-bottom:0.75rem">📚 Chat with Bookworm</button>
+      <button class="btn-secondary" onclick="goToLibrary()" style="width:100%">Choose another book</button>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="readingScreen">
   <div class="container">
     <div class="card">
@@ -405,6 +447,7 @@
 <script src="js/tts.js"></script>
 <script src="js/feedback.js"></script>
 <script src="js/recording.js"></script>
+<script src="js/book-reader.js"></script>
 <script src="js/bookworm.js"></script>
 <script src="js/library.js"></script>
 <script src="js/progress.js"></script>

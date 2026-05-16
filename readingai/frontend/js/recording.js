@@ -18,6 +18,7 @@ function startRecording() {
     let fullTranscript = '';
     let allWords = [];
     let accSum = 0, fluSum = 0, comSum = 0, count = 0;
+    wordHighlightPointer = 0;
 
     recognizer.recognized = (s, e) => {
       if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
@@ -30,6 +31,7 @@ function startRecording() {
         count++;
         if (pr.detailResult && pr.detailResult.Words) {
           allWords = allWords.concat(pr.detailResult.Words);
+          highlightWords(pr.detailResult.Words, 'passageText');
         }
       }
     };
