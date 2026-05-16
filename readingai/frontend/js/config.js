@@ -5,6 +5,7 @@ const IBM_PROJECT_ID = CONFIG.IBM_PROJECT_ID;
 
 const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
+let sessionRestored = false;
 let currentStudent = {};
 let currentClassCode = '';
 let currentClassName = '';
