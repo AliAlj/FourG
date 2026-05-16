@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MichiganReads AI</title>
+<script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Michigan<span>Reads</span> AI</div>
+    <div class="header-sub">Powered by IBM Granite and Azure Speech</div>
+  </div>
+  <div id="headerRight"></div>
+</header>
+
+<div class="word-detail-modal" id="wordModal">
+  <div class="word-detail-card">
+    <div class="word-detail-word" id="modalWord"></div>
+    <div class="word-detail-pos" id="modalPos"></div>
+    <div class="word-detail-phonetic" id="modalPhonetic"></div>
+    <div class="word-detail-score" id="modalScore"></div>
+    <div class="word-detail-definition" id="modalDefinition">Loading...</div>
+    <div class="word-detail-btns">
+      <button class="btn-gold" onclick="hearWord()">🔊 Hear it slowly</button>
+      <button class="btn-secondary" onclick="closeWordModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="student-detail-modal" id="studentModal">
+  <div class="student-detail-card">
+    <div class="student-detail-header">
+      <div>
+        <div class="student-detail-name" id="detailName"></div>
+        <div class="student-detail-meta" id="detailMeta"></div>
+      </div>
+      <button class="btn-secondary" onclick="closeStudentModal()">Close</button>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-label">Scores</div>
+      <div class="score-row" id="detailScores"></div>
+    </div>
+
+    <div class="detail-section" id="detailWordsSection">
+      <div class="detail-section-label">Difficult Words</div>
+      <div id="detailWords"></div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-label">AI Feedback Given</div>
+      <div class="detail-feedback" id="detailFeedback"></div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-label">Passage Read</div>
+      <div style="font-size:0.88rem;color:#555" id="detailPassage"></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen active" id="roleScreen">
+  <div class="container">
+    <div class="card" style="margin-top:1rem">
+      <h2>Welcome to MichiganReads AI</h2>
+      <p class="subtitle">The AI reading tutor built for Michigan students, powered by IBM Granite and Azure Speech AI.</p>
+      <div class="role-selector">
+        <button class="role-btn" onclick="showScreen('studentCodeScreen')">
+          <span class="icon">📚</span>
+          <div class="role-name">I am a Student</div>
+          <div class="role-desc">Practice reading out loud</div>
+        </button>
+        <button class="role-btn" onclick="showScreen('teacherAuthScreen')">
+          <span class="icon">🏫</span>
+          <div class="role-name">I am a Teacher</div>
+          <div class="role-desc">View student progress</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="studentCodeScreen">
+  <div class="container">
+    <div class="card">
+      <h2>Enter your class code</h2>
+      <p class="subtitle">Ask your teacher for your 6-letter class code.</p>
+      <div class="error-msg" id="codeError"></div>
+      <div class="form-group">
+        <label>Class Code</label>
+        <input type="text" class="code-input" id="classCodeInput" placeholder="ABC123" maxlength="6" />
+      </div>
+      <button class="btn-primary" onclick="verifyClassCode()">Continue</button>
+      <div style="text-align:center;margin-top:1rem">
+        <button class="btn-secondary" onclick="showScreen('roleScreen')" style="width:auto">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="studentSetupScreen">
+  <div class="container">
+    <div class="card">
+      <h2 id="setupWelcome">Welcome!</h2>
+      <p class="subtitle">Tell us about yourself so we can find the right Michigan story for you.</p>
+      <div class="form-group">
+        <label>Your first name</label>
+        <input type="text" id="studentName" placeholder="e.g. Marcus" />
+      </div>
+      <div class="form-group">
+        <label>Your grade</label>
+        <select id="studentGrade">
+          <option value="3">Grade 3</option>
+          <option value="4" selected>Grade 4</option>
+          <option value="5">Grade 5</option>
+          <option value="6">Grade 6</option>
+          <option value="7">Grade 7</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="startReading()">Start Reading</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="readingScreen">
+  <div class="container">
+    <div class="card">
+      <div class="passage-chips" id="passageChips"></div>
+      <div class="passage-label" id="passageGradeLabel">Grade 4 Passage</div>
+      <div class="grade-badge" id="passageTopicBadge">Detroit History</div>
+      <div class="passage-title" id="passageTitle"></div>
+      <div class="passage-text" id="passageText"></div>
+    </div>
+
+    <div class="card">
+      <div class="mic-section">
+        <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎙️</button>
+        <p class="mic-label" id="micLabel">Tap the microphone and read the passage out loud</p>
+        <div class="transcript-box" id="transcriptBox">Your reading will appear here as you speak...</div>
+        <p class="status-msg" id="statusMsg"></p>
+        <div class="speaking-bar" id="speakingBar">🔊 MichiganReads AI is speaking...</div>
+      </div>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <p style="margin-top:0.75rem" id="loadingMsg">Analyzing your reading with Azure AI...</p>
+    </div>
+
+    <div class="card" id="feedbackCard" style="display:none;border-top:6px solid #f0a500">
+      <div class="encouragement" id="encouragementText">Great job!</div>
+      <p style="font-size:0.78rem;color:#999;margin-bottom:1rem">Here is what MichiganReads AI noticed</p>
+
+      <div class="score-row">
+        <div class="score-badge"><div class="num" id="scoreAccuracy">0</div><div class="lbl">Accuracy</div></div>
+        <div class="score-badge"><div class="num" id="scoreFluency">0</div><div class="lbl">Fluency</div></div>
+        <div class="score-badge"><div class="num" id="scoreCompleteness">0</div><div class="lbl">Completeness</div></div>
+        <div class="score-badge gold"><div class="num" id="scoreOverall">0</div><div class="lbl">Overall</div></div>
+      </div>
+
+      <div class="word-cards-section" id="wordCardsSection" style="display:none">
+        <div class="word-cards-label">Tap a word to learn more</div>
+        <div class="word-cards" id="wordCards"></div>
+      </div>
+
+      <div class="ai-feedback-box" id="aiFeedbackBox"></div>
+
+      <div class="btn-row">
+        <button class="btn-gold" onclick="speakFeedback()">🔊 Hear feedback</button>
+        <button class="btn-secondary" onclick="tryAgain()">Try again</button>
+        <button class="btn-secondary" onclick="nextPassage()">Next passage</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="teacherAuthScreen">
+  <div class="container">
+    <div class="card">
+      <h2>Teacher Sign In</h2>
+      <p class="subtitle">Sign in to view your students reading progress and manage your classes.</p>
+      <div class="error-msg" id="authError"></div>
+      <div class="success-msg" id="authSuccess"></div>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="teacherEmail" placeholder="you@school.edu" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="teacherPassword" placeholder="Your password" />
+      </div>
+      <button class="btn-primary" onclick="teacherLogin()">Sign in</button>
+      <div style="text-align:center;margin-top:1rem;font-size:0.88rem;color:#666">
+        New teacher? <a href="#" onclick="teacherSignup()" style="color:#1a3a5c;font-weight:600">Create account</a>
+      </div>
+      <div style="text-align:center;margin-top:0.75rem">
+        <button class="btn-secondary" onclick="showScreen('roleScreen')" style="width:auto">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="teacherDashboardScreen">
+  <div class="teacher-container">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div>
+          <h2>Teacher Dashboard</h2>
+          <p class="subtitle" style="margin-bottom:0">Manage your classes and track student progress.</p>
+        </div>
+        <button class="btn-secondary" onclick="teacherLogout()">Sign out</button>
+      </div>
+
+      <button class="btn-primary" onclick="showCreateClass()" style="margin-bottom:1rem">+ Create new class</button>
+
+      <div id="createClassForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div class="form-group">
+          <label>Class name</label>
+          <input type="text" id="newClassName" placeholder="e.g. Period 2 Reading or Mrs. Johnson Grade 4" />
+        </div>
+        <div style="display:flex;gap:0.6rem">
+          <button class="btn-primary" onclick="createClass()" style="flex:1">Create class</button>
+          <button class="btn-secondary" onclick="hideCreateClass()">Cancel</button>
+        </div>
+      </div>
+
+      <div id="classList"></div>
+    </div>
+
+    <div class="card" id="studentsDashboard" style="display:none">
+      <div id="dashboardHeader"></div>
+      <div class="teacher-tabs" id="teacherTabs"></div>
+      <div id="studentsList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/passages.js"></script>
+<script src="js/tts.js"></script>
+<script src="js/feedback.js"></script>
+<script src="js/recording.js"></script>
+<script src="js/app.js"></script>
+<script src="js/teacher.js"></script>
+</body>
+</html>
