@@ -1,9 +1,19 @@
+function setTeacherHeader(email) {
+  const label = email.split('@')[0];
+  document.getElementById('headerRight').innerHTML =
+    `<div style="display:flex;align-items:center;gap:0.75rem">
+      <span style="font-size:0.82rem;opacity:0.8">Hi ${label}!</span>
+      <button onclick="teacherLogout()" style="padding:0.3rem 0.7rem;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:white;border-radius:6px;font-size:0.72rem;cursor:pointer;font-family:inherit">Sign out</button>
+    </div>`;
+}
+
 async function teacherLogin() {
   const email = document.getElementById('teacherEmail').value.trim();
   const password = document.getElementById('teacherPassword').value;
   if (!email || !password) return showError('authError', 'Please fill in all fields.');
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
   if (error) return showError('authError', error.message);
+  setTeacherHeader(data.user.email);
   showScreen('teacherDashboardScreen');
   await loadClasses();
 }
@@ -20,6 +30,7 @@ async function teacherSignup() {
 
 async function teacherLogout() {
   await sb.auth.signOut();
+  document.getElementById('headerRight').innerHTML = '';
   document.getElementById('libraryAdminCard').style.display = 'none';
   showScreen('roleScreen');
 }
