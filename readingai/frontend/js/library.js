@@ -8,7 +8,10 @@ async function goToLibrary() {
 async function loadLibraryBooks() {
   document.getElementById('libraryLoading').style.display = 'block';
   document.getElementById('libraryGrid').innerHTML = '';
-  let allBooks = passages.map(p => ({ ...p, source: 'builtin' }));
+  let allBooks = [
+    ...illustratedBooks.map(b => ({ ...b, source: 'illustrated', text: b.pages.map(p => p.text).join(' ') })),
+    ...passages.map(p => ({ ...p, source: 'builtin' }))
+  ];
   try {
     const { data } = await sb.from('library_books').select('*').order('created_at', { ascending: false });
     if (data && data.length > 0) {
@@ -52,6 +55,8 @@ function renderLibrary(books, gradeFilter) {
     const coverClass = `grade-${Math.min(book.grade, 7)}`;
     const teacherBadge = book.source === 'teacher'
       ? '<span class="source-teacher-badge">Teacher</span>' : '';
+    const illustratedBadge = book.source === 'illustrated'
+      ? '<span class="source-illustrated-badge">🖼️ Illustrated</span>' : '';
     const assignedBadge = currentAssignments.includes(book.title.toLowerCase())
       ? '<span class="source-assigned-badge">📌 Assigned</span>' : '';
     const coverHtml = book.cover_url
@@ -70,7 +75,7 @@ function renderLibrary(books, gradeFilter) {
       <div class="book-card" onclick="selectLibraryBook(${idx})">
         ${coverHtml}
         <div class="book-card-body">
-          <div class="book-card-title">${book.title}${teacherBadge}${assignedBadge}</div>
+          <div class="book-card-title">${book.title}${teacherBadge}${illustratedBadge}${assignedBadge}</div>
           ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
           <div class="book-card-excerpt">${excerpt}</div>
         </div>
@@ -89,10 +94,14 @@ function filterLibrary(grade) {
 
 function selectLibraryBook(index) {
   currentBook = libraryBooks[index];
+  if (currentBook.type === 'illustrated' && currentBook.pages) {
+    openBookReader(currentBook);
+    return;
+  }
   document.getElementById('passageGradeLabel').innerText = `Grade ${currentBook.grade} Passage`;
   document.getElementById('passageTopicBadge').innerText = currentBook.topic || '';
   document.getElementById('passageTitle').innerText = currentBook.title;
-  document.getElementById('passageText').innerText = currentBook.text;
+  renderTextAsWordSpans(currentBook.text, 'passageText');
   document.getElementById('passageChips').innerHTML =
     `<button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem;margin-bottom:0.5rem">&#8592; Library</button>`;
   resetReadingState();

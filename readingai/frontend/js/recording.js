@@ -92,6 +92,7 @@ function startRecording() {
     let allWords = [];
     let accSum = 0, count = 0;
     let startedAt = 0;
+    wordHighlightPointer = 0;
 
     recognizer.recognized = (s, e) => {
       if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
@@ -102,6 +103,7 @@ function startRecording() {
         count++;
         if (pr.detailResult && pr.detailResult.Words) {
           allWords = allWords.concat(pr.detailResult.Words);
+          highlightWords(pr.detailResult.Words, 'passageText');
         }
       }
     };
