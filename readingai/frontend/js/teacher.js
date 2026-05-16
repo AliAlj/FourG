@@ -20,6 +20,7 @@ async function teacherSignup() {
 
 async function teacherLogout() {
   await sb.auth.signOut();
+  document.getElementById('libraryAdminCard').style.display = 'none';
   showScreen('roleScreen');
 }
 
@@ -68,6 +69,7 @@ async function loadClasses() {
         <button onclick="openClassDashboard('${cls.class_code}','${cls.class_name}')" style="padding:0.35rem 0.75rem;background:#1a3a5c;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;color:white;cursor:pointer;font-family:inherit">View students</button>
       </div>
     </div>`).join('');
+  await loadLibraryAdmin();
 }
 
 function copyCode(code) {

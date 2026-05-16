@@ -805,6 +805,109 @@
   }
 
   .btn-danger:hover { background: #fbd0d0; }
+
+  /* Book search */
+  .book-search-box { position: relative; margin-bottom: 1.25rem; }
+
+  .book-search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    background: #fafafa;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .book-search-input:focus { border-color: #1a3a5c; background: white; }
+
+  .book-search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .book-search-results {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 50;
+    overflow: hidden;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .book-search-results.open { display: block; }
+
+  .book-search-result {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+  }
+
+  .book-search-result:last-child { border-bottom: none; }
+  .book-search-result:hover { background: #f0f5ff; }
+
+  .book-search-cover {
+    width: 36px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+    background: #e0e0e0;
+  }
+
+  .book-search-cover-placeholder {
+    width: 36px;
+    height: 52px;
+    background: linear-gradient(135deg, #1a3a5c, #2a5a8c);
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .book-search-result-title { font-size: 0.88rem; font-weight: 700; color: #1a3a5c; }
+  .book-search-result-author { font-size: 0.75rem; color: #888; margin-top: 0.1rem; }
+  .book-search-result-year { font-size: 0.68rem; color: #aaa; margin-top: 0.1rem; }
+  .book-search-status { padding: 1rem; text-align: center; color: #888; font-size: 0.85rem; }
+
+  /* Real cover images on book cards */
+  .book-card-img-container {
+    position: relative;
+    height: 140px;
+    overflow: hidden;
+  }
+
+  .book-card-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .book-card-img-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+  }
 </style>
 </head>
 <body>
@@ -1055,6 +1158,15 @@
       </div>
 
       <div id="addBookForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div class="book-search-box">
+          <span class="book-search-icon">🔍</span>
+          <input type="text" class="book-search-input" id="bookSearchInput"
+            placeholder="Search by title or author..."
+            oninput="debounceBookSearch(this.value)"
+            autocomplete="off" />
+          <div class="book-search-results" id="bookSearchResults"></div>
+        </div>
+        <p style="font-size:0.75rem;color:#aaa;margin-top:-0.75rem;margin-bottom:1rem">Search auto-fills the fields below, or fill them in manually.</p>
         <div class="form-group">
           <label>Title</label>
           <input type="text" id="newBookTitle" placeholder="e.g. The Gift of the Magi" />
@@ -1081,7 +1193,11 @@
         </div>
         <div class="form-group">
           <label>Reading passage</label>
-          <textarea id="newBookText" placeholder="Paste the book excerpt or reading passage here..." rows="6" style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;color:#1a1a1a;background:#fafafa;font-family:inherit;resize:vertical;outline:none"></textarea>
+          <button id="gutenbergFetchBtn" style="display:none;width:100%;margin-bottom:0.6rem;padding:0.65rem;background:#e8f4e8;color:#2a7a4a;border:1.5px solid #a5d6a7;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;text-align:left" onclick="fetchGutenbergText()">
+            📖 Auto-fill text from Project Gutenberg (public domain classic)
+          </button>
+          <textarea id="newBookText" placeholder="Paste a reading passage here, or use the button above if the book was found on Project Gutenberg." rows="6" style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;color:#1a1a1a;background:#fafafa;font-family:inherit;resize:vertical;outline:none"></textarea>
+          <p style="font-size:0.72rem;color:#aaa;margin-top:0.4rem">Trim the text down to one paragraph or a few sentences — students read it out loud.</p>
         </div>
         <div style="display:flex;gap:0.6rem">
           <button class="btn-primary" onclick="addBook()" style="flex:1">Save to library</button>
@@ -1127,6 +1243,9 @@
   let currentBook = null;
   let libraryBooks = [];
   let currentLibraryFilter = null;
+  let selectedBookCoverUrl = '';
+  let bookSearchTimeout = null;
+  let gutenbergTextUrl = null;
 
   const phonetics = {
     'resilience': 'reh-ZIL-ee-ents',
@@ -1272,12 +1391,21 @@
       const coverClass = `grade-${Math.min(book.grade, 7)}`;
       const teacherBadge = book.source === 'teacher'
         ? '<span class="source-teacher-badge">Teacher</span>' : '';
-      return `
-        <div class="book-card">
-          <div class="book-card-cover ${coverClass}">
+      const coverHtml = book.cover_url
+        ? `<div class="book-card-img-container">
+            <img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">
+            <div class="book-card-img-overlay">
+              <span class="book-card-grade">Grade ${book.grade}</span>
+              <span class="book-card-topic">${book.topic || ''}</span>
+            </div>
+           </div>`
+        : `<div class="book-card-cover ${coverClass}">
             <span class="book-card-grade">Grade ${book.grade}</span>
             <span class="book-card-topic">${book.topic || ''}</span>
-          </div>
+           </div>`;
+      return `
+        <div class="book-card">
+          ${coverHtml}
           <div class="book-card-body">
             <div class="book-card-title">${book.title}${teacherBadge}</div>
             ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
@@ -1700,12 +1828,149 @@ Write simple warm feedback for this student. Mention 1 mispronounced word if any
     ).join('');
   }
 
+  function debounceBookSearch(query) {
+    clearTimeout(bookSearchTimeout);
+    const resultsEl = document.getElementById('bookSearchResults');
+    if (query.length < 3) { resultsEl.classList.remove('open'); return; }
+    bookSearchTimeout = setTimeout(() => searchBooks(query), 450);
+  }
+
+  async function searchBooks(query) {
+    const resultsEl = document.getElementById('bookSearchResults');
+    resultsEl.innerHTML = '<div class="book-search-status">Searching...</div>';
+    resultsEl.classList.add('open');
+    try {
+      const res = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_i,first_publish_year`
+      );
+      const data = await res.json();
+      renderBookSearchResults(data.docs || []);
+    } catch {
+      resultsEl.innerHTML = '<div class="book-search-status">Search failed — fill in the fields manually.</div>';
+    }
+  }
+
+  function renderBookSearchResults(books) {
+    const resultsEl = document.getElementById('bookSearchResults');
+    if (!books.length) {
+      resultsEl.innerHTML = '<div class="book-search-status">No results found.</div>';
+      return;
+    }
+    resultsEl.innerHTML = books.map((b, i) => {
+      const thumbUrl = b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-S.jpg` : null;
+      const largeUrl = b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg` : null;
+      const author = b.author_name ? b.author_name[0] : '';
+      const year = b.first_publish_year || '';
+      return `
+        <div class="book-search-result" onclick="selectBookResult(${i})">
+          ${thumbUrl
+            ? `<img class="book-search-cover" src="${thumbUrl}" alt="${b.title}">`
+            : `<div class="book-search-cover-placeholder"></div>`}
+          <div>
+            <div class="book-search-result-title">${b.title}</div>
+            ${author ? `<div class="book-search-result-author">${author}</div>` : ''}
+            ${year ? `<div class="book-search-result-year">${year}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    resultsEl._bookData = books;
+  }
+
+  function selectBookResult(i) {
+    const resultsEl = document.getElementById('bookSearchResults');
+    const b = resultsEl._bookData[i];
+    document.getElementById('newBookTitle').value = b.title || '';
+    document.getElementById('newBookAuthor').value = b.author_name ? b.author_name[0] : '';
+    document.getElementById('bookSearchInput').value = b.title || '';
+    selectedBookCoverUrl = b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg` : '';
+    resultsEl.classList.remove('open');
+    lookupGutenberg(b.title || '');
+  }
+
+  async function lookupGutenberg(title) {
+    gutenbergTextUrl = null;
+    const btn = document.getElementById('gutenbergFetchBtn');
+    btn.style.display = 'block';
+    btn.disabled = true;
+    btn.textContent = 'Checking Project Gutenberg for free text...';
+    btn.style.background = '#f0f0f0';
+    btn.style.color = '#888';
+    btn.style.borderColor = '#ddd';
+    try {
+      const res = await fetch(`https://gutendex.com/books/?search=${encodeURIComponent(title)}`);
+      const data = await res.json();
+      if (!data.results || !data.results.length) { btn.style.display = 'none'; return; }
+      for (const book of data.results) {
+        const formats = book.formats || {};
+        const textUrl = formats['text/plain; charset=utf-8'] ||
+          formats['text/plain'] ||
+          Object.entries(formats).find(([k]) => k.startsWith('text/plain'))?.[1];
+        if (textUrl) {
+          gutenbergTextUrl = textUrl;
+          btn.textContent = '📖 Auto-fill text from Project Gutenberg (public domain)';
+          btn.disabled = false;
+          btn.style.background = '#e8f4e8';
+          btn.style.color = '#2a7a4a';
+          btn.style.borderColor = '#a5d6a7';
+          return;
+        }
+      }
+      btn.style.display = 'none';
+    } catch (e) {
+      btn.style.display = 'none';
+      console.log('Gutenberg lookup error:', e);
+    }
+  }
+
+  async function fetchGutenbergText() {
+    if (!gutenbergTextUrl) return;
+    const btn = document.getElementById('gutenbergFetchBtn');
+    btn.textContent = 'Fetching from Project Gutenberg...';
+    btn.disabled = true;
+
+    const bookId = (gutenbergTextUrl.match(/\/(\d+)(?:\/|-0\.txt|\.txt)/) || [])[1];
+
+    if (!bookId) {
+      btn.textContent = 'Could not find book ID — paste the text manually from gutenberg.org';
+      btn.disabled = false;
+      return;
+    }
+
+    let text = null;
+    try {
+      const { data, error } = await sb.functions.invoke('fetch-gutenberg', { body: { bookId } });
+      if (!error && data?.text) text = data.text;
+    } catch { }
+
+    if (!text) {
+      btn.textContent = 'Could not fetch — paste the text manually from gutenberg.org';
+      btn.disabled = false;
+      return;
+    }
+
+    document.getElementById('newBookText').value = text;
+    btn.textContent = '✓ Text loaded — trim it down to one passage for students';
+    btn.style.background = '#f0f5ff';
+    btn.style.color = '#1a3a5c';
+    btn.style.borderColor = '#c8d8f0';
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.book-search-box')) {
+      document.getElementById('bookSearchResults')?.classList.remove('open');
+    }
+  });
+
   function showAddBookForm() { document.getElementById('addBookForm').style.display = 'block'; }
 
   function hideAddBookForm() {
     document.getElementById('addBookForm').style.display = 'none';
-    ['newBookTitle', 'newBookAuthor', 'newBookText', 'newBookTopic'].forEach(id =>
+    ['newBookTitle', 'newBookAuthor', 'newBookText', 'newBookTopic', 'bookSearchInput'].forEach(id =>
       document.getElementById(id).value = '');
+    document.getElementById('bookSearchResults').classList.remove('open');
+    document.getElementById('gutenbergFetchBtn').style.display = 'none';
+    selectedBookCoverUrl = '';
+    gutenbergTextUrl = null;
   }
 
   async function addBook() {
@@ -1716,7 +1981,7 @@ Write simple warm feedback for this student. Mention 1 mispronounced word if any
     const text = document.getElementById('newBookText').value.trim();
     if (!title || !text) { alert('Please fill in the title and passage text.'); return; }
     const { data: { user } } = await sb.auth.getUser();
-    const { error } = await sb.from('library_books').insert({ teacher_id: user.id, title, author, grade, topic, text });
+    const { error } = await sb.from('library_books').insert({ teacher_id: user.id, title, author, grade, topic, text, cover_url: selectedBookCoverUrl || null });
     if (error) {
       alert('Could not save. Make sure the library_books table exists in Supabase:\n\ncreate table library_books (\n  id uuid default gen_random_uuid() primary key,\n  teacher_id uuid references auth.users(id),\n  title text not null,\n  author text,\n  grade int not null,\n  topic text,\n  text text not null,\n  created_at timestamptz default now()\n);');
       return;

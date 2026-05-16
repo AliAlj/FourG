@@ -17,34 +17,6 @@ function showSuccess(id, msg) {
   setTimeout(() => el.style.display = 'none', 5000);
 }
 
-async function verifyClassCode() {
-  const code = document.getElementById('classCodeInput').value.trim().toUpperCase();
-  if (!code || code.length < 4) {
-    showError('codeError', 'Please enter a valid class code.');
-    return;
-  }
-  const { data, error } = await sb.from('classes').select('class_name').eq('class_code', code).single();
-  if (error || !data) {
-    showError('codeError', 'Class code not found. Please check with your teacher.');
-    return;
-  }
-  currentClassCode = code;
-  currentClassName = data.class_name;
-  document.getElementById('setupWelcome').innerText = `Welcome to ${data.class_name}!`;
-  showScreen('studentSetupScreen');
-}
-
-function startReading() {
-  const name = document.getElementById('studentName').value.trim();
-  const grade = parseInt(document.getElementById('studentGrade').value);
-  if (!name) { alert('Please enter your name.'); return; }
-  currentStudent = { name, grade };
-  currentPassageIndex = 0;
-  loadPassage();
-  showScreen('readingScreen');
-  document.getElementById('headerRight').innerHTML =
-    `<span style="font-size:0.82rem;opacity:0.8">Hi ${name}! 👋</span>`;
-}
 
 function loadPassage() {
   const available = passages.filter(p => p.grade <= currentStudent.grade);
@@ -75,4 +47,4 @@ function resetReadingState() {
 }
 
 function tryAgain() { resetReadingState(); }
-function nextPassage() { currentPassageIndex++; loadPassage(); }
+function nextPassage() { goToLibrary(); }

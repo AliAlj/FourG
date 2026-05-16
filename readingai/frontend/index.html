@@ -70,7 +70,7 @@
       <h2>Welcome to MichiganReads AI</h2>
       <p class="subtitle">The AI reading tutor built for Michigan students, powered by IBM Granite and Azure Speech AI.</p>
       <div class="role-selector">
-        <button class="role-btn" onclick="showScreen('studentCodeScreen')">
+        <button class="role-btn" onclick="showScreen('studentAuthScreen')">
           <span class="icon">📚</span>
           <div class="role-name">I am a Student</div>
           <div class="role-desc">Practice reading out loud</div>
@@ -85,17 +85,61 @@
   </div>
 </div>
 
-<div class="screen" id="studentCodeScreen">
+<div class="screen" id="studentAuthScreen">
   <div class="container">
-    <div class="card">
-      <h2>Enter your class code</h2>
-      <p class="subtitle">Ask your teacher for your 6-letter class code.</p>
-      <div class="error-msg" id="codeError"></div>
-      <div class="form-group">
-        <label>Class Code</label>
-        <input type="text" class="code-input" id="classCodeInput" placeholder="ABC123" maxlength="6" />
+    <div class="card" style="margin-top:1rem">
+      <h2>Student Account</h2>
+      <p class="subtitle">Sign in to your account, or create a new one.</p>
+
+      <div class="teacher-tabs" style="margin-bottom:1.25rem">
+        <button class="teacher-tab active" id="tabSignUp" onclick="switchStudentTab('signup')">Sign Up</button>
+        <button class="teacher-tab" id="tabSignIn" onclick="switchStudentTab('signin')">Sign In</button>
       </div>
-      <button class="btn-primary" onclick="verifyClassCode()">Continue</button>
+
+      <div id="signUpForm">
+        <div class="error-msg" id="signUpError"></div>
+        <div class="form-group">
+          <label>Your first name</label>
+          <input type="text" id="sName" placeholder="e.g. Marcus" />
+        </div>
+        <div class="form-group">
+          <label>Your grade</label>
+          <select id="sGrade">
+            <option value="3">Grade 3</option>
+            <option value="4" selected>Grade 4</option>
+            <option value="5">Grade 5</option>
+            <option value="6">Grade 6</option>
+            <option value="7">Grade 7</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Class code (from your teacher)</label>
+          <input type="text" class="code-input" id="sClassCode" placeholder="ABC123" maxlength="6" style="text-transform:uppercase" />
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="sEmail" placeholder="you@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="sPassword" placeholder="At least 6 characters" />
+        </div>
+        <button class="btn-primary" onclick="studentSignUp()">Create account</button>
+      </div>
+
+      <div id="signInForm" style="display:none">
+        <div class="error-msg" id="signInError"></div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="sEmailIn" placeholder="you@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="sPasswordIn" placeholder="Your password" />
+        </div>
+        <button class="btn-primary" onclick="studentSignIn()">Sign in</button>
+      </div>
+
       <div style="text-align:center;margin-top:1rem">
         <button class="btn-secondary" onclick="showScreen('roleScreen')" style="width:auto">Back</button>
       </div>
@@ -103,27 +147,17 @@
   </div>
 </div>
 
-<div class="screen" id="studentSetupScreen">
-  <div class="container">
+<div class="screen" id="libraryScreen">
+  <div class="library-screen-container">
     <div class="card">
-      <h2 id="setupWelcome">Welcome!</h2>
-      <p class="subtitle">Tell us about yourself so we can find the right Michigan story for you.</p>
-      <div class="form-group">
-        <label>Your first name</label>
-        <input type="text" id="studentName" placeholder="e.g. Marcus" />
-      </div>
-      <div class="form-group">
-        <label>Your grade</label>
-        <select id="studentGrade">
-          <option value="3">Grade 3</option>
-          <option value="4" selected>Grade 4</option>
-          <option value="5">Grade 5</option>
-          <option value="6">Grade 6</option>
-          <option value="7">Grade 7</option>
-        </select>
-      </div>
-      <button class="btn-primary" onclick="startReading()">Start Reading</button>
+      <h2>Library</h2>
+      <p class="subtitle" id="libraryWelcome">Choose a book to read out loud.</p>
+      <div class="library-filters" id="libraryFilters"></div>
     </div>
+    <div class="loading" id="libraryLoading">
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+    <div class="library-grid" id="libraryGrid"></div>
   </div>
 </div>
 
@@ -173,7 +207,7 @@
       <div class="btn-row">
         <button class="btn-gold" onclick="speakFeedback()">🔊 Hear feedback</button>
         <button class="btn-secondary" onclick="tryAgain()">Try again</button>
-        <button class="btn-secondary" onclick="nextPassage()">Next passage</button>
+        <button class="btn-secondary" onclick="nextPassage()">Choose another book</button>
       </div>
     </div>
   </div>
@@ -232,6 +266,66 @@
       <div id="classList"></div>
     </div>
 
+    <div class="card" id="libraryAdminCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div>
+          <h2>Library</h2>
+          <p class="subtitle" style="margin-bottom:0">Add and manage books for students.</p>
+        </div>
+        <button class="btn-gold" onclick="showAddBookForm()">+ Add book</button>
+      </div>
+
+      <div id="addBookForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div class="book-search-box">
+          <span class="book-search-icon">🔍</span>
+          <input type="text" class="book-search-input" id="bookSearchInput"
+            placeholder="Search by title or author..."
+            oninput="debounceBookSearch(this.value)"
+            autocomplete="off" />
+          <div class="book-search-results" id="bookSearchResults"></div>
+        </div>
+        <p style="font-size:0.75rem;color:#aaa;margin-top:-0.75rem;margin-bottom:1rem">Search auto-fills the fields below, or fill them in manually.</p>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="newBookTitle" placeholder="e.g. The Gift of the Magi" />
+        </div>
+        <div class="form-group">
+          <label>Author (optional)</label>
+          <input type="text" id="newBookAuthor" placeholder="e.g. O. Henry" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group">
+            <label>Grade level</label>
+            <select id="newBookGrade">
+              <option value="3">Grade 3</option>
+              <option value="4" selected>Grade 4</option>
+              <option value="5">Grade 5</option>
+              <option value="6">Grade 6</option>
+              <option value="7">Grade 7</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Topic / Genre</label>
+            <input type="text" id="newBookTopic" placeholder="e.g. Nature" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reading passage</label>
+          <button id="gutenbergFetchBtn" style="display:none;width:100%;margin-bottom:0.6rem;padding:0.65rem;background:#e8f4e8;color:#2a7a4a;border:1.5px solid #a5d6a7;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;text-align:left" onclick="fetchGutenbergText()">
+            📖 Auto-fill text from Project Gutenberg (public domain classic)
+          </button>
+          <textarea id="newBookText" placeholder="Paste a reading passage here. This can be from any source — a textbook, news article, classroom reader, or any book. For classic public domain books (pre-1928), use the auto-fill button above. Keep it to 2–4 sentences so students can read it out loud." rows="6" style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;color:#1a1a1a;background:#fafafa;font-family:inherit;resize:vertical;outline:none"></textarea>
+          <p style="font-size:0.72rem;color:#aaa;margin-top:0.4rem">Tip: modern books (Dr. Seuss, Harry Potter, etc.) are under copyright and won't auto-fill — just copy and paste a paragraph from the book directly.</p>
+        </div>
+        <div style="display:flex;gap:0.6rem">
+          <button class="btn-primary" onclick="addBook()" style="flex:1">Save to library</button>
+          <button class="btn-secondary" onclick="hideAddBookForm()">Cancel</button>
+        </div>
+      </div>
+
+      <div id="libraryAdminList"></div>
+    </div>
+
     <div class="card" id="studentsDashboard" style="display:none">
       <div id="dashboardHeader"></div>
       <div class="teacher-tabs" id="teacherTabs"></div>
@@ -240,11 +334,14 @@
   </div>
 </div>
 
+<script src="config.js"></script>
 <script src="js/config.js"></script>
 <script src="js/passages.js"></script>
 <script src="js/tts.js"></script>
 <script src="js/feedback.js"></script>
 <script src="js/recording.js"></script>
+<script src="js/library.js"></script>
+<script src="js/student-auth.js"></script>
 <script src="js/app.js"></script>
 <script src="js/teacher.js"></script>
 </body>
