@@ -22,8 +22,21 @@ header {
 .logo span { color: #f0a500; }
 .header-sub { font-size: 0.75rem; opacity: 0.7; margin-top: 0.1rem; }
 
-.screen { display: none; }
-.screen.active { display: block; }
+.screen {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.screen.active {
+  display: block;
+  opacity: 1;
+}
+
+.bookworm-intro.active,
+#roleScreen.active {
+  display: flex;
+}
 
 .container {
   max-width: 680px;
@@ -895,4 +908,126 @@ input:focus, select:focus {
   right: 0;
   padding: 0.5rem 0.75rem;
   background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+}
+body.splash-active,
+body.role-active {
+  margin: 0;
+  background: #4179CB;
+  overflow: hidden;
+}
+
+body.splash-active header,
+body.role-active header {
+  display: none;
+}
+
+.bookworm-intro,
+#roleScreen {
+  min-height: 100vh;
+  width: 100vw;
+  display: none;
+  background: #4179CB;
+}
+
+.bookworm-intro.active,
+#roleScreen.active {
+  display: flex;
+}
+
+.bookworm-page {
+  width: 100vw;
+  height: 100vh;
+  background: #4179CB;
+  position: relative;
+  overflow: hidden;
+}
+
+.bookworm-intro .bookworm-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 100%;
+  background: #102260;
+}
+
+.bookworm-logo {
+  position: absolute;
+  top: 15%;
+  left: 52%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: Chalkduster, "Marker Felt", fantasy;
+  font-size: clamp(4rem, 8vw, 8rem);
+  font-weight: 400;
+  white-space: nowrap;
+  text-shadow: 0 4px 7px rgba(0,0,0,0.18);
+}
+
+.bookworm-arc span {
+  display: inline-block;
+  position: relative;
+}
+
+.bookworm-arc span:nth-child(1) { transform: translateY(55px) rotate(-34deg); }
+.bookworm-arc span:nth-child(2) { transform: translateY(28px) rotate(-24deg); }
+.bookworm-arc span:nth-child(3) { transform: translateY(8px) rotate(-14deg); }
+.bookworm-arc span:nth-child(4) { transform: translateY(-10px) rotate(-6deg); }
+.bookworm-arc span:nth-child(5) { transform: translateY(-8px) rotate(4deg); }
+.bookworm-arc span:nth-child(6) { transform: translateY(4px) rotate(12deg); }
+.bookworm-arc span:nth-child(7) { transform: translateY(24px) rotate(22deg); }
+.bookworm-arc span:nth-child(8) { transform: translateY(52px) rotate(32deg); }
+
+.bookworm-tagline {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+  line-height: 1.15;
+  text-align: center;
+  max-width: 80%;
+}
+
+.welcome-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 9%;
+}
+
+.welcome-title {
+  color: white;
+  font-family: Chalkduster, "Marker Felt", fantasy;
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 400;
+  text-align: center;
+  text-shadow: 0 4px 7px rgba(0,0,0,0.18);
+}
+
+.welcome-role-selector {
+  width: 65%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12%;
+  margin-top: 10%;
+}
+
+.welcome-role-btn {
+  height: 150px;
+  border: 3px solid #17224a;
+  border-radius: 42px;
+  background: #E8EDF7;
+  color: #111D45;
+  box-shadow: 0 4px 7px rgba(0,0,0,0.18);
+  cursor: pointer;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: clamp(1.7rem, 2.4vw, 2.5rem);
+}
+
+.welcome-role-btn:hover {
+  transform: translateY(-3px);
 }

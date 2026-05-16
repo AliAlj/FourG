@@ -1,7 +1,41 @@
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const currentScreen = document.querySelector('.screen.active');
+  const nextScreen = document.getElementById(id);
+
+  if (currentScreen === nextScreen) return;
+
+  if (currentScreen) {
+    currentScreen.style.opacity = "0";
+
+    setTimeout(() => {
+      currentScreen.classList.remove('active');
+
+      nextScreen.classList.add('active');
+
+      nextScreen.style.opacity = "0";
+
+      setTimeout(() => {
+        nextScreen.style.opacity = "1";
+      }, 50);
+
+    }, 500);
+  } else {
+    nextScreen.classList.add('active');
+
+    setTimeout(() => {
+      nextScreen.style.opacity = "1";
+    }, 50);
+  }
+
+  document.body.classList.toggle('splash-active', id === 'loadingScreen');
+  document.body.classList.toggle('role-active', id === 'roleScreen');
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    showScreen('roleScreen');
+  }, 2200);
+});
 
 function showError(id, msg) {
   const el = document.getElementById(id);
