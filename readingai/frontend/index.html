@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+<body class="splash-active">
 
 <header>
   <div>
@@ -81,23 +81,33 @@
   </div>
 </div>
 
-<div class="screen active" id="roleScreen">
-  <div class="container">
-    <div class="card" style="margin-top:1rem">
-      <h2>Welcome to MichiganReads AI</h2>
-      <p class="subtitle">The AI reading tutor built for Michigan students, powered by IBM Granite and Azure Speech AI.</p>
-      <div class="role-selector">
-        <button class="role-btn" onclick="showScreen('studentAuthScreen')">
-          <span class="icon">📚</span>
-          <div class="role-name">I am a Student</div>
-          <div class="role-desc">Practice reading out loud</div>
-        </button>
-        <button class="role-btn" onclick="showScreen('teacherAuthScreen')">
-          <span class="icon">🏫</span>
-          <div class="role-name">I am a Teacher</div>
-          <div class="role-desc">View student progress</div>
-        </button>
-      </div>
+<div class="screen active bookworm-intro" id="loadingScreen">
+  <div class="bookworm-page">
+<h1 class="bookworm-logo bookworm-arc">
+  <span>B</span><span>o</span><span>o</span><span>k</span><span>W</span><span>o</span><span>r</span><span>m</span>
+</h1>
+    <p class="bookworm-tagline">
+      Empowering Michigan students to become confident readers through personalized
+      feedback and real-time support, powered by IBM Granite and Azure Speech AI.
+    </p>
+  </div>
+</div>
+
+<div class="screen" id="roleScreen">
+  <div class="bookworm-page welcome-page">
+
+    <h1 class="welcome-title">Welcome to BookWorm</h1>
+
+    <div class="welcome-role-selector">
+
+      <button class="welcome-role-btn" onclick="showScreen('teacherAuthScreen')">
+        I am a Teacher
+      </button>
+
+      <button class="welcome-role-btn" onclick="showScreen('studentAuthScreen')">
+        I am a Student
+      </button>
+
     </div>
   </div>
 </div>

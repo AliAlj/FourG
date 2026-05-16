@@ -22,8 +22,21 @@ header {
 .logo span { color: #f0a500; }
 .header-sub { font-size: 0.75rem; opacity: 0.7; margin-top: 0.1rem; }
 
-.screen { display: none; }
-.screen.active { display: block; }
+.screen {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.screen.active {
+  display: block;
+  opacity: 1;
+}
+
+.bookworm-intro.active,
+#roleScreen.active {
+  display: flex;
+}
 
 .container {
   max-width: 680px;
@@ -896,108 +909,123 @@ input:focus, select:focus {
   padding: 0.5rem 0.75rem;
   background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
 }
+body.splash-active,
+body.role-active {
+  margin: 0;
+  background: #4179CB;
+  overflow: hidden;
+}
 
-/* Bookworm */
-.bookworm-panel {
-  position: fixed;
-  bottom: 0;
-  right: 1.5rem;
-  width: 360px;
-  height: 500px;
-  background: white;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 32px rgba(0,0,0,0.15);
+body.splash-active header,
+body.role-active header {
+  display: none;
+}
+
+.bookworm-intro,
+#roleScreen {
+  min-height: 100vh;
+  width: 100vw;
+  display: none;
+  background: #4179CB;
+}
+
+.bookworm-intro.active,
+#roleScreen.active {
+  display: flex;
+}
+
+.bookworm-page {
+  width: 100vw;
+  height: 100vh;
+  background: #4179CB;
+  position: relative;
+  overflow: hidden;
+}
+
+.bookworm-intro .bookworm-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42px;
+  height: 100%;
+  background: #102260;
+}
+
+.bookworm-logo {
+  position: absolute;
+  top: 15%;
+  left: 52%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: Chalkduster, "Marker Felt", fantasy;
+  font-size: clamp(4rem, 8vw, 8rem);
+  font-weight: 400;
+  white-space: nowrap;
+  text-shadow: 0 4px 7px rgba(0,0,0,0.18);
+}
+
+.bookworm-arc span {
+  display: inline-block;
+  position: relative;
+}
+
+.bookworm-arc span:nth-child(1) { transform: translateY(55px) rotate(-34deg); }
+.bookworm-arc span:nth-child(2) { transform: translateY(28px) rotate(-24deg); }
+.bookworm-arc span:nth-child(3) { transform: translateY(8px) rotate(-14deg); }
+.bookworm-arc span:nth-child(4) { transform: translateY(-10px) rotate(-6deg); }
+.bookworm-arc span:nth-child(5) { transform: translateY(-8px) rotate(4deg); }
+.bookworm-arc span:nth-child(6) { transform: translateY(4px) rotate(12deg); }
+.bookworm-arc span:nth-child(7) { transform: translateY(24px) rotate(22deg); }
+.bookworm-arc span:nth-child(8) { transform: translateY(52px) rotate(32deg); }
+
+.bookworm-tagline {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+  line-height: 1.15;
+  text-align: center;
+  max-width: 80%;
+}
+
+.welcome-page {
   display: flex;
   flex-direction: column;
-  z-index: 300;
-  transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-}
-
-.bookworm-panel.open { transform: translateY(0); }
-
-.bookworm-header {
-  background: linear-gradient(135deg, #2e7d32, #43a047);
-  color: white;
-  padding: 1rem 1.25rem;
-  border-radius: 20px 20px 0 0;
-  display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
+  padding-top: 9%;
 }
 
-.bookworm-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.bookworm-bubble {
-  padding: 0.7rem 1rem;
-  border-radius: 14px;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  max-width: 88%;
-  word-wrap: break-word;
-}
-
-.bookworm-bubble.worm {
-  background: #e8f5e9;
-  color: #1b3a1b;
-  border-radius: 14px 14px 14px 4px;
-  align-self: flex-start;
-}
-
-.bookworm-bubble.student {
-  background: #1a3a5c;
+.welcome-title {
   color: white;
-  border-radius: 14px 14px 4px 14px;
-  align-self: flex-end;
+  font-family: Chalkduster, "Marker Felt", fantasy;
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 400;
+  text-align: center;
+  text-shadow: 0 4px 7px rgba(0,0,0,0.18);
 }
 
-.bookworm-bubble.typing {
-  background: #f0f0f0;
-  color: #999;
-  align-self: flex-start;
-  font-style: italic;
+.welcome-role-selector {
+  width: 65%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12%;
+  margin-top: 10%;
 }
 
-.bookworm-input-row {
-  padding: 0.75rem;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.bookworm-input {
-  flex: 1;
-  padding: 0.6rem 1rem;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 20px;
-  font-size: 0.88rem;
-  outline: none;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.bookworm-input:focus { border-color: #2e7d32; }
-
-.bookworm-mic-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: #1a3a5c;
-  border: none;
+.welcome-role-btn {
+  height: 150px;
+  border: 3px solid #17224a;
+  border-radius: 42px;
+  background: #E8EDF7;
+  color: #111D45;
+  box-shadow: 0 4px 7px rgba(0,0,0,0.18);
   cursor: pointer;
-  font-size: 1rem;
-  flex-shrink: 0;
-  transition: background 0.2s;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: clamp(1.7rem, 2.4vw, 2.5rem);
 }
 
 .bookworm-mic-btn.listening { background: #e74c3c; animation: pulse 1s infinite; }
@@ -1362,4 +1390,8 @@ input:focus, select:focus {
   border-radius: 5px;
   margin-left: 0.4rem;
   vertical-align: middle;
+}
+
+.welcome-role-btn:hover {
+  transform: translateY(-3px);
 }
