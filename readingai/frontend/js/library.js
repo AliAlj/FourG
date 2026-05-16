@@ -8,7 +8,10 @@ async function goToLibrary() {
 async function loadLibraryBooks() {
   document.getElementById('libraryLoading').style.display = 'block';
   document.getElementById('libraryGrid').innerHTML = '';
-  let allBooks = passages.map(p => ({ ...p, source: 'builtin' }));
+  let allBooks = [
+    ...illustratedBooks.map(b => ({ ...b, source: 'illustrated', text: b.pages.map(p => p.text).join(' ') })),
+    ...passages.map(p => ({ ...p, source: 'builtin' }))
+  ];
   try {
     const { data } = await sb.from('library_books').select('*').order('created_at', { ascending: false });
     if (data && data.length > 0) {
@@ -50,6 +53,10 @@ function renderLibrary(books, gradeFilter) {
   document.getElementById('libraryGrid').innerHTML = filtered.map(book => {
     const idx = libraryBooks.indexOf(book);
     const coverClass = `grade-${Math.min(book.grade, 7)}`;
+    const teacherBadge = book.source === 'teacher'
+      ? '<span class="source-teacher-badge">Teacher</span>' : '';
+    const illustratedBadge = book.source === 'illustrated'
+      ? '<span class="source-illustrated-badge">🖼️ Illustrated</span>' : '';
     const assignedBadge = currentAssignments.includes(book.title.toLowerCase())
       ? '<span class="source-assigned-badge" style="position:absolute;top:8px;right:8px;z-index:2">📌</span>' : '';
     const coverHtml = book.cover_url
@@ -72,7 +79,12 @@ function renderLibrary(books, gradeFilter) {
     return `
       <div class="book-card" onclick="selectLibraryBook(${idx})">
         ${coverHtml}
-        <div class="book-card-footer" style="display:flex;gap:0.4rem;padding:0.7rem 0.9rem;border-top:1px solid #f0f0f0">
+        <div class="book-card-body">
+          <div class="book-card-title">${book.title}${teacherBadge}${illustratedBadge}${assignedBadge}</div>
+          ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
+          <div class="book-card-excerpt">${excerpt}</div>
+        </div>
+        <div class="book-card-footer" style="display:flex;gap:0.4rem">
           <button class="book-card-read-btn" style="flex:1">Read this book</button>
           <button onclick="event.stopPropagation();openBookwormFromLibrary(${idx})" style="padding:0.55rem 0.65rem;background:#2e7d32;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem" title="Chat with Bookworm"><img src="assets/wormAi.png" alt="AI" style="width:1.1rem;height:1.1rem;object-fit:contain;display:block"></button>
         </div>
@@ -87,10 +99,14 @@ function filterLibrary(grade) {
 
 function selectLibraryBook(index) {
   currentBook = libraryBooks[index];
+  if (currentBook.type === 'illustrated' && currentBook.pages) {
+    openBookReader(currentBook);
+    return;
+  }
   document.getElementById('passageGradeLabel').innerText = `Grade ${currentBook.grade} Passage`;
   document.getElementById('passageTopicBadge').innerText = currentBook.topic || '';
   document.getElementById('passageTitle').innerText = currentBook.title;
-  document.getElementById('passageText').innerText = currentBook.text;
+  renderTextAsWordSpans(currentBook.text, 'passageText');
   document.getElementById('passageChips').innerHTML =
     `<button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem;margin-bottom:0.5rem">&#8592; Library</button>`;
   resetReadingState();
