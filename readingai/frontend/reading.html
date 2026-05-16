@@ -669,6 +669,142 @@
 
   .detail-word-chip.bad { background: #fde8e8; color: #c0392b; }
   .detail-word-chip.ok { background: #fff3cd; color: #856404; }
+
+  /* Library */
+  .library-screen-container { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+
+  .library-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
+
+  .library-filter-chip {
+    padding: 0.4rem 1rem;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 99px;
+    background: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .library-filter-chip.active { background: #1a3a5c; color: white; border-color: #1a3a5c; }
+
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .book-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .book-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.12); border-color: #1a3a5c; }
+
+  .book-card-cover {
+    padding: 1.1rem 1rem 0.9rem;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #1a3a5c 0%, #2a5a8c 100%);
+  }
+
+  .book-card-cover.grade-3 { background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); }
+  .book-card-cover.grade-4 { background: linear-gradient(135deg, #1a3a5c 0%, #2a5a8c 100%); }
+  .book-card-cover.grade-5 { background: linear-gradient(135deg, #6a1a5c 0%, #9c3a8c 100%); }
+  .book-card-cover.grade-6 { background: linear-gradient(135deg, #7a3a1a 0%, #b05a2a 100%); }
+  .book-card-cover.grade-7 { background: linear-gradient(135deg, #1a4a4a 0%, #2a7a7a 100%); }
+
+  .book-card-grade {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+    margin-bottom: 0.4rem;
+    align-self: flex-start;
+  }
+
+  .book-card-topic { color: rgba(255,255,255,0.85); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .book-card-body { padding: 0.9rem; flex: 1; }
+  .book-card-title { font-size: 0.9rem; font-weight: 800; color: #1a3a5c; margin-bottom: 0.2rem; line-height: 1.3; }
+  .book-card-author { font-size: 0.72rem; color: #888; margin-bottom: 0.5rem; }
+  .book-card-excerpt { font-size: 0.75rem; color: #666; line-height: 1.5; }
+
+  .book-card-footer { padding: 0.7rem 0.9rem; border-top: 1px solid #f0f0f0; }
+
+  .book-card-read-btn {
+    width: 100%;
+    padding: 0.55rem;
+    background: #1a3a5c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+
+  .book-card-read-btn:hover { background: #0f2a45; }
+
+  .source-teacher-badge {
+    display: inline-block;
+    background: #fff3cd;
+    color: #856404;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border-radius: 99px;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+  }
+
+  .library-book-admin {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+    background: #fafafa;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    border: 1.5px solid #e0e0e0;
+  }
+
+  .library-book-admin-title { font-weight: 700; font-size: 0.9rem; color: #1a3a5c; }
+  .library-book-admin-meta { font-size: 0.75rem; color: #888; margin-top: 0.15rem; }
+
+  .btn-danger {
+    padding: 0.4rem 0.85rem;
+    background: #fde8e8;
+    color: #c0392b;
+    border: 1.5px solid #e8a0a0;
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+    transition: all 0.2s;
+  }
+
+  .btn-danger:hover { background: #fbd0d0; }
 </style>
 </head>
 <body>
@@ -790,6 +926,20 @@
   </div>
 </div>
 
+<div class="screen" id="libraryScreen">
+  <div class="library-screen-container">
+    <div class="card">
+      <h2>Library</h2>
+      <p class="subtitle" id="libraryWelcome">Choose a book to read out loud.</p>
+      <div class="library-filters" id="libraryFilters"></div>
+    </div>
+    <div class="loading" id="libraryLoading">
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+    <div class="library-grid" id="libraryGrid"></div>
+  </div>
+</div>
+
 <div class="screen" id="readingScreen">
   <div class="container">
     <div class="card">
@@ -836,7 +986,7 @@
       <div class="btn-row">
         <button class="btn-gold" onclick="speakFeedback()">🔊 Hear feedback</button>
         <button class="btn-secondary" onclick="tryAgain()">Try again</button>
-        <button class="btn-secondary" onclick="nextPassage()">Next passage</button>
+        <button class="btn-secondary" onclick="nextPassage()">Choose another book</button>
       </div>
     </div>
   </div>
@@ -895,6 +1045,53 @@
       <div id="classList"></div>
     </div>
 
+    <div class="card" id="libraryAdminCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div>
+          <h2>Library</h2>
+          <p class="subtitle" style="margin-bottom:0">Add and manage books for students.</p>
+        </div>
+        <button class="btn-gold" onclick="showAddBookForm()">+ Add book</button>
+      </div>
+
+      <div id="addBookForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="newBookTitle" placeholder="e.g. The Gift of the Magi" />
+        </div>
+        <div class="form-group">
+          <label>Author (optional)</label>
+          <input type="text" id="newBookAuthor" placeholder="e.g. O. Henry" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group">
+            <label>Grade level</label>
+            <select id="newBookGrade">
+              <option value="3">Grade 3</option>
+              <option value="4" selected>Grade 4</option>
+              <option value="5">Grade 5</option>
+              <option value="6">Grade 6</option>
+              <option value="7">Grade 7</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Topic / Genre</label>
+            <input type="text" id="newBookTopic" placeholder="e.g. Nature" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reading passage</label>
+          <textarea id="newBookText" placeholder="Paste the book excerpt or reading passage here..." rows="6" style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;color:#1a1a1a;background:#fafafa;font-family:inherit;resize:vertical;outline:none"></textarea>
+        </div>
+        <div style="display:flex;gap:0.6rem">
+          <button class="btn-primary" onclick="addBook()" style="flex:1">Save to library</button>
+          <button class="btn-secondary" onclick="hideAddBookForm()">Cancel</button>
+        </div>
+      </div>
+
+      <div id="libraryAdminList"></div>
+    </div>
+
     <div class="card" id="studentsDashboard" style="display:none">
       <div id="dashboardHeader"></div>
       <div class="teacher-tabs" id="teacherTabs"></div>
@@ -903,15 +1100,16 @@
   </div>
 </div>
 
+<script src="config.js"></script>
 <script>
-  const AZURE_KEY = "";
-  const AZURE_REGION = "eastus";
-  const IBM_PROJECT_ID = "";
-  const IBM_API_KEY = "";
+  const AZURE_KEY = CONFIG.AZURE_KEY;
+  const AZURE_REGION = CONFIG.AZURE_REGION;
+  const IBM_PROJECT_ID = CONFIG.IBM_PROJECT_ID;
+  const IBM_API_KEY = CONFIG.IBM_API_KEY;
   const WX_URL = "https://us-south.ml.cloud.ibm.com";
   const MODEL_ID = "ibm/granite-4-h-small";
-  const SUPABASE_URL = "";
-  const SUPABASE_ANON_KEY = "";
+  const SUPABASE_URL = CONFIG.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = CONFIG.SUPABASE_ANON_KEY;
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -926,6 +1124,9 @@
   let allSessions = [];
   let teacherClasses = [];
   let wordDataCache = {};
+  let currentBook = null;
+  let libraryBooks = [];
+  let currentLibraryFilter = null;
 
   const phonetics = {
     'resilience': 'reh-ZIL-ee-ents',
@@ -1024,11 +1225,86 @@
     const grade = parseInt(document.getElementById('studentGrade').value);
     if (!name) { alert('Please enter your name.'); return; }
     currentStudent = { name, grade };
-    currentPassageIndex = 0;
-    loadPassage();
-    showScreen('readingScreen');
     document.getElementById('headerRight').innerHTML =
       `<span style="font-size:0.82rem;opacity:0.8">Hi ${name}! 👋</span>`;
+    goToLibrary();
+  }
+
+  async function goToLibrary() {
+    showScreen('libraryScreen');
+    document.getElementById('libraryWelcome').innerText =
+      `Hi ${currentStudent.name}! Choose a book to read out loud.`;
+    await loadLibraryBooks();
+  }
+
+  async function loadLibraryBooks() {
+    document.getElementById('libraryLoading').style.display = 'block';
+    document.getElementById('libraryGrid').innerHTML = '';
+    let allBooks = passages.map(p => ({ ...p, source: 'builtin' }));
+    try {
+      const { data } = await sb.from('library_books').select('*').order('created_at', { ascending: false });
+      if (data && data.length > 0) {
+        allBooks = [...data.map(b => ({ ...b, source: 'teacher' })), ...allBooks];
+      }
+    } catch { }
+    document.getElementById('libraryLoading').style.display = 'none';
+    renderLibrary(allBooks, currentLibraryFilter);
+  }
+
+  function renderLibrary(books, gradeFilter) {
+    libraryBooks = books;
+    const eligible = books.filter(b => b.grade <= currentStudent.grade);
+    const filtered = gradeFilter ? eligible.filter(b => b.grade === gradeFilter) : eligible;
+    const grades = [...new Set(eligible.map(b => b.grade))].sort();
+    document.getElementById('libraryFilters').innerHTML =
+      `<button class="library-filter-chip ${!gradeFilter ? 'active' : ''}" onclick="filterLibrary(null)">All</button>` +
+      grades.map(g =>
+        `<button class="library-filter-chip ${gradeFilter === g ? 'active' : ''}" onclick="filterLibrary(${g})">Grade ${g}</button>`
+      ).join('');
+    if (!filtered.length) {
+      document.getElementById('libraryGrid').innerHTML =
+        '<div class="empty-state"><div class="icon">📚</div><p>No books available yet.</p></div>';
+      return;
+    }
+    document.getElementById('libraryGrid').innerHTML = filtered.map(book => {
+      const idx = libraryBooks.indexOf(book);
+      const excerpt = book.text.substring(0, 110) + '…';
+      const coverClass = `grade-${Math.min(book.grade, 7)}`;
+      const teacherBadge = book.source === 'teacher'
+        ? '<span class="source-teacher-badge">Teacher</span>' : '';
+      return `
+        <div class="book-card">
+          <div class="book-card-cover ${coverClass}">
+            <span class="book-card-grade">Grade ${book.grade}</span>
+            <span class="book-card-topic">${book.topic || ''}</span>
+          </div>
+          <div class="book-card-body">
+            <div class="book-card-title">${book.title}${teacherBadge}</div>
+            ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
+            <div class="book-card-excerpt">${excerpt}</div>
+          </div>
+          <div class="book-card-footer">
+            <button class="book-card-read-btn" onclick="selectLibraryBook(${idx})">Read this book</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function filterLibrary(grade) {
+    currentLibraryFilter = grade;
+    renderLibrary(libraryBooks, grade);
+  }
+
+  function selectLibraryBook(index) {
+    currentBook = libraryBooks[index];
+    document.getElementById('passageGradeLabel').innerText = `Grade ${currentBook.grade} Passage`;
+    document.getElementById('passageTopicBadge').innerText = currentBook.topic || '';
+    document.getElementById('passageTitle').innerText = currentBook.title;
+    document.getElementById('passageText').innerText = currentBook.text;
+    document.getElementById('passageChips').innerHTML =
+      `<button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem;margin-bottom:0.5rem">&#8592; Library</button>`;
+    resetReadingState();
+    showScreen('readingScreen');
   }
 
   function loadPassage() {
@@ -1047,6 +1323,7 @@
   }
 
   function selectPassage(i) { currentPassageIndex = i; loadPassage(); }
+  function nextPassage() { goToLibrary(); }
   function resetReadingState() {
     document.getElementById('transcriptBox').innerText = 'Your reading will appear here as you speak...';
     document.getElementById('micLabel').innerText = 'Tap the microphone and read the passage out loud';
@@ -1059,7 +1336,6 @@
   }
 
   function tryAgain() { resetReadingState(); }
-  function nextPassage() { currentPassageIndex++; loadPassage(); }
   function toggleRecording() { if (isRecording) stopRecording(); else startRecording(); }
 
   function startRecording() {
@@ -1385,7 +1661,74 @@ Write simple warm feedback for this student. Mention 1 mispronounced word if any
 
   async function teacherLogout() {
     await sb.auth.signOut();
+    document.getElementById('libraryAdminCard').style.display = 'none';
     showScreen('roleScreen');
+  }
+
+  async function loadLibraryAdmin() {
+    document.getElementById('libraryAdminCard').style.display = 'block';
+    const { data: { user } } = await sb.auth.getUser();
+    let teacherBooks = [];
+    try {
+      const { data } = await sb.from('library_books')
+        .select('*')
+        .eq('teacher_id', user.id)
+        .order('created_at', { ascending: false });
+      teacherBooks = data || [];
+    } catch { }
+    renderLibraryAdmin(teacherBooks);
+  }
+
+  function renderLibraryAdmin(books) {
+    const list = document.getElementById('libraryAdminList');
+    if (!books.length) {
+      list.innerHTML = `
+        <p style="color:#aaa;font-size:0.88rem;margin-bottom:0.75rem">No books added yet. Click "+ Add book" to add a reading passage.</p>
+        <div style="padding:1rem;background:#f0f5ff;border-radius:10px;font-size:0.82rem;color:#555;border-left:3px solid #1a3a5c">
+          <strong>Tip:</strong> Free passages are available at Project Gutenberg (gutenberg.org) and CommonLit (commonlit.org).
+        </div>`;
+      return;
+    }
+    list.innerHTML = books.map(b =>
+      `<div class="library-book-admin">
+        <div>
+          <div class="library-book-admin-title">${b.title}</div>
+          <div class="library-book-admin-meta">Grade ${b.grade} · ${b.topic || 'General'}${b.author ? ` · by ${b.author}` : ''}</div>
+        </div>
+        <button class="btn-danger" onclick="deleteBook('${b.id}')">Remove</button>
+      </div>`
+    ).join('');
+  }
+
+  function showAddBookForm() { document.getElementById('addBookForm').style.display = 'block'; }
+
+  function hideAddBookForm() {
+    document.getElementById('addBookForm').style.display = 'none';
+    ['newBookTitle', 'newBookAuthor', 'newBookText', 'newBookTopic'].forEach(id =>
+      document.getElementById(id).value = '');
+  }
+
+  async function addBook() {
+    const title = document.getElementById('newBookTitle').value.trim();
+    const author = document.getElementById('newBookAuthor').value.trim();
+    const grade = parseInt(document.getElementById('newBookGrade').value);
+    const topic = document.getElementById('newBookTopic').value.trim();
+    const text = document.getElementById('newBookText').value.trim();
+    if (!title || !text) { alert('Please fill in the title and passage text.'); return; }
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from('library_books').insert({ teacher_id: user.id, title, author, grade, topic, text });
+    if (error) {
+      alert('Could not save. Make sure the library_books table exists in Supabase:\n\ncreate table library_books (\n  id uuid default gen_random_uuid() primary key,\n  teacher_id uuid references auth.users(id),\n  title text not null,\n  author text,\n  grade int not null,\n  topic text,\n  text text not null,\n  created_at timestamptz default now()\n);');
+      return;
+    }
+    hideAddBookForm();
+    await loadLibraryAdmin();
+  }
+
+  async function deleteBook(id) {
+    if (!confirm('Remove this book from the library?')) return;
+    await sb.from('library_books').delete().eq('id', id);
+    await loadLibraryAdmin();
   }
 
   function showCreateClass() { document.getElementById('createClassForm').style.display = 'block'; }
@@ -1433,6 +1776,7 @@ Write simple warm feedback for this student. Mention 1 mispronounced word if any
           <button onclick="openClassDashboard('${cls.class_code}','${cls.class_name}')" style="padding:0.35rem 0.75rem;background:#1a3a5c;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;color:white;cursor:pointer;font-family:inherit">View students</button>
         </div>
       </div>`).join('');
+    await loadLibraryAdmin();
   }
 
   function copyCode(code) {
