@@ -130,16 +130,6 @@
           <input type="text" id="sName" placeholder="e.g. Marcus" />
         </div>
         <div class="form-group">
-          <label>Your grade</label>
-          <select id="sGrade">
-            <option value="3">Grade 3</option>
-            <option value="4" selected>Grade 4</option>
-            <option value="5">Grade 5</option>
-            <option value="6">Grade 6</option>
-            <option value="7">Grade 7</option>
-          </select>
-        </div>
-        <div class="form-group">
           <label>Class code (from your teacher)</label>
           <input type="text" class="code-input" id="sClassCode" placeholder="ABC123" maxlength="6" style="text-transform:uppercase" />
         </div>
@@ -252,10 +242,26 @@
       <p style="font-size:0.78rem;color:#999;margin-bottom:1rem">Here is what MichiganReads AI noticed</p>
 
       <div class="score-row">
-        <div class="score-badge"><div class="num" id="scoreAccuracy">0</div><div class="lbl">Accuracy</div></div>
-        <div class="score-badge"><div class="num" id="scoreFluency">0</div><div class="lbl">Fluency</div></div>
-        <div class="score-badge"><div class="num" id="scoreCompleteness">0</div><div class="lbl">Completeness</div></div>
-        <div class="score-badge gold"><div class="num" id="scoreOverall">0</div><div class="lbl">Overall</div></div>
+        <div class="score-badge">
+          <div class="num" id="scoreAccuracy">0</div>
+          <div class="lbl">Accuracy</div>
+          <span class="score-tip">How well you pronounced each word. Words scored below 75% show up in the cards below.</span>
+        </div>
+        <div class="score-badge">
+          <div class="num" id="scoreFluency">0</div>
+          <div class="lbl">Fluency</div>
+          <span class="score-tip" id="fluencyTip">How smoothly you read based on your speed vs. your grade's target.</span>
+        </div>
+        <div class="score-badge">
+          <div class="num" id="scoreCompleteness">0</div>
+          <div class="lbl">Completeness</div>
+          <span class="score-tip">How much of the passage you read. Based on how many passage words you actually said.</span>
+        </div>
+        <div class="score-badge gold">
+          <div class="num" id="scoreOverall">0</div>
+          <div class="lbl">Overall</div>
+          <span class="score-tip">Your average score — Accuracy + Fluency + Completeness divided by 3.</span>
+        </div>
       </div>
 
       <div class="word-cards-section" id="wordCardsSection" style="display:none">

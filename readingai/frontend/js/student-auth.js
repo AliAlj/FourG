@@ -8,7 +8,7 @@ function switchStudentTab(tab) {
 
 async function studentSignUp() {
   const name = document.getElementById('sName').value.trim();
-  const grade = parseInt(document.getElementById('sGrade').value);
+  const grade = 4;
   const code = document.getElementById('sClassCode').value.trim().toUpperCase();
   const email = document.getElementById('sEmail').value.trim();
   const password = document.getElementById('sPassword').value;
