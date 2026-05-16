@@ -60,8 +60,9 @@ function renderLibrary(books, gradeFilter) {
           ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
           <div class="book-card-excerpt">${excerpt}</div>
         </div>
-        <div class="book-card-footer">
-          <button class="book-card-read-btn">Read this book</button>
+        <div class="book-card-footer" style="display:flex;gap:0.4rem">
+          <button class="book-card-read-btn" style="flex:1">Read this book</button>
+          <button onclick="event.stopPropagation();openBookwormFromLibrary(${idx})" style="padding:0.55rem 0.65rem;background:#2e7d32;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem" title="Chat with Bookworm">📚</button>
         </div>
       </div>`;
   }).join('');
