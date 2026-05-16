@@ -97,16 +97,22 @@ function setStudentHeader(name) {
     </div>`;
 }
 
-// Restore session on page load if the student is already signed in
+// Restore session on page load
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return;
   const { data: profile } = await sb.from('student_profiles')
     .select('*').eq('user_id', session.user.id).single();
-  if (!profile) return;
-  currentStudent = { name: profile.name, grade: profile.grade, userId: session.user.id };
-  currentClassCode = profile.class_code || '';
-  currentClassName = profile.class_name || '';
-  setStudentHeader(profile.name);
-  goToLibrary();
+  sessionRestored = true;
+  if (profile) {
+    currentStudent = { name: profile.name, grade: profile.grade, userId: session.user.id };
+    currentClassCode = profile.class_code || '';
+    currentClassName = profile.class_name || '';
+    setStudentHeader(profile.name);
+    goToLibrary();
+  } else {
+    setTeacherHeader(session.user.email);
+    showScreen('teacherDashboardScreen');
+    await loadClasses();
+  }
 })();
