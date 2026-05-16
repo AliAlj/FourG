@@ -331,11 +331,44 @@
     border-radius: 12px;
     padding: 0.75rem 0.5rem;
     text-align: center;
+    position: relative;
+    cursor: help;
   }
 
   .score-badge.gold { background: #f0a500; }
   .score-badge .num { font-size: 1.4rem; font-weight: 800; }
   .score-badge .lbl { font-size: 0.65rem; opacity: 0.8; margin-top: 0.1rem; }
+
+  .score-tip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 20, 0.92);
+    color: #fff;
+    font-size: 0.7rem;
+    line-height: 1.45;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    width: 170px;
+    text-align: center;
+    z-index: 200;
+    pointer-events: none;
+    font-weight: 400;
+  }
+
+  .score-tip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(20, 20, 20, 0.92);
+  }
+
+  .score-badge:hover .score-tip { display: block; }
 
   .encouragement {
     font-size: 1.2rem;
@@ -1073,10 +1106,26 @@
       <p style="font-size:0.78rem;color:#999;margin-bottom:1rem">Here is what MichiganReads AI noticed</p>
 
       <div class="score-row">
-        <div class="score-badge"><div class="num" id="scoreAccuracy">0</div><div class="lbl">Accuracy</div></div>
-        <div class="score-badge"><div class="num" id="scoreFluency">0</div><div class="lbl">Fluency</div></div>
-        <div class="score-badge"><div class="num" id="scoreCompleteness">0</div><div class="lbl">Completeness</div></div>
-        <div class="score-badge gold"><div class="num" id="scoreOverall">0</div><div class="lbl">Overall</div></div>
+        <div class="score-badge">
+          <div class="num" id="scoreAccuracy">0</div>
+          <div class="lbl">Accuracy</div>
+          <span class="score-tip">How well you pronounced each word. Words scored below 75% show up in the cards below.</span>
+        </div>
+        <div class="score-badge">
+          <div class="num" id="scoreFluency">0</div>
+          <div class="lbl">Fluency</div>
+          <span class="score-tip" id="fluencyTip">How smoothly you read based on your speed vs. your grade's target.</span>
+        </div>
+        <div class="score-badge">
+          <div class="num" id="scoreCompleteness">0</div>
+          <div class="lbl">Completeness</div>
+          <span class="score-tip">How much of the passage you read. Based on how many passage words you actually said.</span>
+        </div>
+        <div class="score-badge gold">
+          <div class="num" id="scoreOverall">0</div>
+          <div class="lbl">Overall</div>
+          <span class="score-tip">Your average score — Accuracy + Fluency + Completeness divided by 3.</span>
+        </div>
       </div>
 
       <div class="word-cards-section" id="wordCardsSection" style="display:none">
@@ -1466,6 +1515,62 @@
   function tryAgain() { resetReadingState(); }
   function toggleRecording() { if (isRecording) stopRecording(); else startRecording(); }
 
+  function normalizeReadingWords(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/'/g, '')
+      .match(/[a-z0-9]+/g) || [];
+  }
+
+  function countAlignedWords(referenceWords, spokenWords) {
+    const previous = new Array(spokenWords.length + 1).fill(0);
+    const current = new Array(spokenWords.length + 1).fill(0);
+
+    for (const referenceWord of referenceWords) {
+      for (let i = 1; i <= spokenWords.length; i++) {
+        current[i] = referenceWord === spokenWords[i - 1]
+          ? previous[i - 1] + 1
+          : Math.max(previous[i], current[i - 1]);
+      }
+      previous.splice(0, previous.length, ...current);
+      current.fill(0);
+    }
+
+    return previous[spokenWords.length];
+  }
+
+  function getTargetWordsPerMinute(grade) {
+    const targets = { 1: 60, 2: 90, 3: 110, 4: 120, 5: 130, 6: 140, 7: 150, 8: 160 };
+    return targets[grade] || 120;
+  }
+
+  function calculatePaceScore(alignedWordCount, elapsedMs, grade) {
+    if (elapsedMs <= 0 || alignedWordCount === 0) return 0;
+    const wordsPerMinute = alignedWordCount / (elapsedMs / 60000);
+    const targetWordsPerMinute = getTargetWordsPerMinute(grade);
+    const tooFastWordsPerMinute = targetWordsPerMinute * 1.4;
+    if (wordsPerMinute <= targetWordsPerMinute) {
+      return Math.round((wordsPerMinute / targetWordsPerMinute) * 100);
+    }
+    if (wordsPerMinute <= tooFastWordsPerMinute) return 100;
+    const penalty = ((wordsPerMinute - tooFastWordsPerMinute) / targetWordsPerMinute) * 50;
+    return Math.max(70, Math.round(100 - penalty));
+  }
+
+  function calculateWholePassageScores(passageText, transcript, azureAccuracy, elapsedMs, grade) {
+    const referenceWords = normalizeReadingWords(passageText);
+    const spokenWords = normalizeReadingWords(transcript);
+    const alignedWords = countAlignedWords(referenceWords, spokenWords);
+    const coverageRatio = referenceWords.length > 0
+      ? Math.min(1, alignedWords / referenceWords.length)
+      : 0;
+    return {
+      accuracy: Math.round(azureAccuracy),
+      fluency: calculatePaceScore(alignedWords, elapsedMs, grade),
+      completeness: Math.round(coverageRatio * 100)
+    };
+  }
+
   function startRecording() {
     const passageText = document.getElementById('passageText').innerText;
     try {
@@ -1483,7 +1588,8 @@
 
       let fullTranscript = '';
       let allWords = [];
-      let accSum = 0, fluSum = 0, comSum = 0, count = 0;
+      let accSum = 0, count = 0;
+      let startedAt = 0;
 
       recognizer.recognized = (s, e) => {
         if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
@@ -1491,8 +1597,6 @@
           fullTranscript += e.result.text + ' ';
           document.getElementById('transcriptBox').innerText = fullTranscript.trim();
           accSum += pr.accuracyScore;
-          fluSum += pr.fluencyScore;
-          comSum += pr.completenessScore;
           count++;
           if (pr.detailResult && pr.detailResult.Words) {
             allWords = allWords.concat(pr.detailResult.Words);
@@ -1507,10 +1611,30 @@
           resetReadingState();
           return;
         }
-        const acc = Math.round(accSum / count);
-        const flu = Math.round(fluSum / count);
-        const com = Math.round(comSum / count);
+        const azureAcc = accSum / count;
+        const elapsedMs = Date.now() - startedAt;
+        const scores = calculateWholePassageScores(
+          passageText,
+          fullTranscript,
+          azureAcc,
+          elapsedMs,
+          currentStudent.grade
+        );
+        const acc = scores.accuracy;
+        const flu = scores.fluency;
+        const com = scores.completeness;
         const overall = Math.round((acc + flu + com) / 3);
+
+        const alignedCount = countAlignedWords(
+          normalizeReadingWords(passageText),
+          normalizeReadingWords(fullTranscript)
+        );
+        const wpm = elapsedMs > 0 ? Math.round(alignedCount / (elapsedMs / 60000)) : 0;
+        const target = getTargetWordsPerMinute(currentStudent.grade);
+        const fluencyTip = document.getElementById('fluencyTip');
+        if (fluencyTip) fluencyTip.textContent =
+          `Reading speed vs. your grade ${currentStudent.grade} target. You read ~${wpm} words/min. Target: ${target} words/min.`;
+
         const badWords = allWords.filter(w =>
           w.PronunciationAssessment && w.PronunciationAssessment.AccuracyScore < 75
         );
@@ -1519,6 +1643,7 @@
 
       recognizer.startContinuousRecognitionAsync(
         () => {
+          startedAt = Date.now();
           isRecording = true;
           document.getElementById('micBtn').classList.add('recording');
           document.getElementById('micLabel').innerText = 'Listening... tap again when you finish';

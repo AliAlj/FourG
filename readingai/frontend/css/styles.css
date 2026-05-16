@@ -353,11 +353,44 @@ input:focus, select:focus {
   border-radius: 12px;
   padding: 0.75rem 0.5rem;
   text-align: center;
+  position: relative;
+  cursor: help;
 }
 
 .score-badge.gold { background: #f0a500; }
 .score-badge .num { font-size: 1.4rem; font-weight: 800; }
 .score-badge .lbl { font-size: 0.65rem; opacity: 0.8; margin-top: 0.1rem; }
+
+.score-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.92);
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  width: 170px;
+  text-align: center;
+  z-index: 200;
+  pointer-events: none;
+  font-weight: 400;
+}
+
+.score-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(20, 20, 20, 0.92);
+}
+
+.score-badge:hover .score-tip { display: block; }
 
 .encouragement {
   font-size: 1.2rem;
