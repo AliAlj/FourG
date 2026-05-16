@@ -242,27 +242,30 @@
 </div>
 
 <div class="screen" id="teacherAuthScreen">
-  <div class="container">
-    <div class="card">
-      <h2>Teacher Sign In</h2>
-      <p class="subtitle">Sign in to view your students reading progress and manage your classes.</p>
+  <div class="bookworm-auth-page">
+    <div class="bookworm-auth-card">
+      <h2 class="bookworm-auth-title">Teacher Sign-in</h2>
+
       <div class="error-msg" id="authError"></div>
       <div class="success-msg" id="authSuccess"></div>
-      <div class="form-group">
+
+      <div class="bookworm-auth-group">
         <label>Email address</label>
-        <input type="email" id="teacherEmail" placeholder="you@school.edu" />
+        <input type="email" id="teacherEmail" />
       </div>
-      <div class="form-group">
+
+      <div class="bookworm-auth-group">
         <label>Password</label>
-        <input type="password" id="teacherPassword" placeholder="Your password" />
+        <input type="password" id="teacherPassword" />
       </div>
-      <button class="btn-primary" onclick="teacherLogin()">Sign in</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.88rem;color:#666">
-        New teacher? <a href="#" onclick="teacherSignup()" style="color:#1a3a5c;font-weight:600">Create account</a>
+
+      <button class="bookworm-signin-btn" onclick="teacherLogin()">Sign in</button>
+
+      <div class="bookworm-create-text">
+        New teacher? <a href="#" onclick="teacherSignup()">Create account</a>
       </div>
-      <div style="text-align:center;margin-top:0.75rem">
-        <button class="btn-secondary" onclick="showScreen('roleScreen')" style="width:auto">Back</button>
-      </div>
+
+      <button class="bookworm-back-btn" onclick="showScreen('roleScreen')">Back</button>
     </div>
   </div>
 </div>

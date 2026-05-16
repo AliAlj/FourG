@@ -24,12 +24,17 @@ header {
 
 .screen {
   display: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
 }
 
 .screen.active {
   display: block;
+}
+#loadingScreen {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#loadingScreen.active {
   opacity: 1;
 }
 
@@ -1030,4 +1035,309 @@ body.role-active header {
 
 .welcome-role-btn:hover {
   transform: translateY(-3px);
+}
+#teacherDashboardScreen {
+  background: #4179CB;
+  min-height: 100vh;
+  padding: 1.5rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+}
+
+#teacherDashboardScreen header,
+#teacherDashboardScreen .card > div:first-child,
+#teacherDashboardScreen .card > .btn-primary {
+  display: none;
+}
+
+.teacher-container {
+  max-width: 100%;
+  padding: 0;
+}
+
+#teacherDashboardScreen .card {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+.teacher-dashboard-shell,
+.teacher-student-panel,
+.teacher-books-panel {
+  background: #E9ECF7;
+  border-radius: 28px;
+  padding: 1.5rem;
+  border: 3px solid #4179CB;
+}
+
+.teacher-dashboard-top {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.teacher-class-code {
+  background: #0D1843;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.teacher-title {
+  color: #0D1843;
+  font-size: 3rem;
+  text-align: center;
+}
+
+.teacher-signout-btn,
+.teacher-add-book-btn {
+  justify-self: end;
+  background: #E9ECF7;
+  color: #0D1843;
+  border: 3px solid #0D1843;
+  border-radius: 22px;
+  padding: 0.7rem 1.1rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.teacher-student-panel {
+  margin-top: 1.25rem;
+}
+
+.teacher-student-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem 3rem;
+}
+
+.teacher-student-row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.student-avatar {
+  width: 58px;
+  height: 58px;
+  background: #aaa;
+  position: relative;
+  box-shadow: 0 4px 7px rgba(0,0,0,0.2);
+}
+
+.student-avatar::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  top: 10px;
+  left: 17px;
+}
+
+.student-avatar::after {
+  content: "";
+  position: absolute;
+  width: 38px;
+  height: 24px;
+  border-radius: 50% 50% 0 0;
+  background: white;
+  bottom: 5px;
+  left: 10px;
+}
+
+.teacher-student-pill {
+  height: 60px;
+  border-radius: 28px;
+  border: 3px solid #0D1843;
+  background: #E9ECF7;
+  color: #0D1843;
+  display: grid;
+  grid-template-columns: 1.6fr 0.7fr 1fr 0.4fr;
+  align-items: center;
+  padding: 0 1.2rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: 1.45rem;
+  box-shadow: 0 4px 7px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+.teacher-stars {
+  font-size: 2rem;
+  letter-spacing: 0.1rem;
+}
+
+.star-gold {
+  color: #D2B21F;
+}
+
+.star-gray {
+  color: #7E8799;
+}
+
+.teacher-arrow {
+  font-size: 2.2rem;
+}
+
+.teacher-books-panel {
+  margin-top: 1.25rem;
+  min-height: 260px;
+  position: relative;
+}
+
+.teacher-books-grid {
+  display: flex;
+  gap: 4rem;
+  align-items: flex-start;
+  padding: 1.5rem 3rem;
+  flex-wrap: wrap;
+}
+
+.teacher-book-card img {
+  width: 170px;
+  height: 240px;
+  object-fit: cover;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+
+.teacher-book-placeholder {
+  width: 170px;
+  height: 240px;
+  background: white;
+  color: #0D1843;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
+
+.teacher-add-book-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.teacher-tabs {
+  display: none;
+}
+
+.teacher-empty-message {
+  color: #0D1843;
+  font-size: 1.3rem;
+  padding: 1rem;
+}
+#teacherAuthScreen {
+  min-height: 100vh;
+  background: #4179CB;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+}
+
+#teacherAuthScreen.active {
+  display: block;
+}
+
+body:has(#teacherAuthScreen.active) header {
+  display: none;
+}
+
+
+
+.bookworm-auth-page {
+  min-height: 100vh;
+  width: 100vw;
+  background: #4179CB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bookworm-auth-card {
+  width: min(760px, 88vw);
+  background: #E9ECF7;
+  border-radius: 24px;
+  padding: 2.3rem 3.4rem 1.4rem;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.25);
+  color: #0D1843;
+}
+
+.bookworm-auth-title {
+  text-align: center;
+  font-size: 3.8rem;
+  font-weight: 400;
+  color: #0D1843;
+  margin-bottom: 2rem;
+}
+
+.bookworm-auth-group {
+  margin-bottom: 1.9rem;
+}
+
+.bookworm-auth-group label {
+  display: block;
+  color: #0D1843;
+  font-size: 1.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.bookworm-auth-group input {
+  width: 100%;
+  height: 76px;
+  border: 3px solid #0D1843;
+  border-radius: 22px;
+  background: #E9ECF7;
+  color: #0D1843;
+  font-size: 1.6rem;
+  padding: 0 1.2rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+}
+
+.bookworm-signin-btn {
+  display: block;
+  margin: 0.6rem auto 1.5rem;
+  background: #0D1843;
+  color: white;
+  border: none;
+  border-radius: 18px;
+  padding: 0.75rem 1.8rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: 2.4rem;
+  cursor: pointer;
+  box-shadow: 0 4px 7px rgba(0,0,0,0.25);
+}
+
+.bookworm-create-text {
+  text-align: center;
+  color: #92949B;
+  font-size: 1.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.bookworm-create-text a {
+  color: #0D1843;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.bookworm-back-btn {
+  display: block;
+  margin: 0 auto;
+  background: #E9ECF7;
+  color: #0D1843;
+  border: 3px solid #0D1843;
+  border-radius: 14px;
+  padding: 0.4rem 1.2rem;
+  font-family: "Marker Felt", Chalkduster, fantasy;
+  font-size: 1.45rem;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
 }

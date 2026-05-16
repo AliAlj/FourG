@@ -48,28 +48,60 @@ function generateCode() {
   return code;
 }
 
+function getStars(score) {
+  const count = score >= 90 ? 3 : score >= 70 ? 2 : score >= 50 ? 1 : 0;
+  let stars = "";
+
+  for (let i = 0; i < 3; i++) {
+    stars += `<span class="${i < count ? "star-gold" : "star-gray"}">★</span>`;
+  }
+
+  return stars;
+}
+
 async function loadClasses() {
   const { data: { user } } = await sb.auth.getUser();
   const { data } = await sb.from('classes').select('*').eq('teacher_id', user.id).order('created_at', { ascending: false });
+
   teacherClasses = data || [];
   const list = document.getElementById('classList');
+
   if (!teacherClasses.length) {
-    list.innerHTML = '<p style="color:#aaa;font-size:0.88rem">No classes yet. Create your first class above.</p>';
+    list.innerHTML = `
+      <div class="teacher-dashboard-shell">
+        <div class="teacher-dashboard-top">
+          <div></div>
+          <div class="teacher-title">Teacher Dashboard</div>
+          <button class="teacher-signout-btn" onclick="teacherLogout()">Sign Out</button>
+        </div>
+
+        <div class="teacher-empty-message">No classes yet. Create your first class.</div>
+      </div>
+    `;
+
     document.getElementById('studentsDashboard').style.display = 'none';
+    document.getElementById('libraryAdminCard').style.display = 'none';
     return;
   }
-  list.innerHTML = teacherClasses.map(cls => `
-    <div class="class-item">
-      <div>
-        <div class="class-item-name">${cls.class_name}</div>
-        <div class="class-item-code">${cls.class_code}</div>
+
+  const firstClass = teacherClasses[0];
+
+  list.innerHTML = `
+    <div class="teacher-dashboard-shell">
+      <div class="teacher-dashboard-top">
+        <button class="teacher-class-code" onclick="copyCode('${firstClass.class_code}')">
+          Class Code : ${firstClass.class_code}
+        </button>
+
+        <div class="teacher-title">Teacher Dashboard</div>
+
+        <button class="teacher-signout-btn" onclick="teacherLogout()">Sign Out</button>
       </div>
-      <div style="display:flex;gap:0.5rem;align-items:center">
-        <button onclick="copyCode('${cls.class_code}')" style="padding:0.35rem 0.75rem;background:#f0f5ff;border:1.5px solid #c8d8f0;border-radius:6px;font-size:0.75rem;font-weight:600;color:#1a3a5c;cursor:pointer;font-family:inherit">Copy code</button>
-        <button onclick="openClassDashboard('${cls.class_code}','${cls.class_name}')" style="padding:0.35rem 0.75rem;background:#1a3a5c;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;color:white;cursor:pointer;font-family:inherit">View students</button>
-      </div>
-    </div>`).join('');
+    </div>
+  `;
+
   await loadLibraryAdmin();
+  await openClassDashboard(firstClass.class_code, firstClass.class_name);
 }
 
 function copyCode(code) {
@@ -81,25 +113,19 @@ async function openClassDashboard(code, name) {
   const { data } = await sb.from('student_sessions')
     .select('*')
     .order('created_at', { ascending: false });
+
   allSessions = data || [];
 
   document.getElementById('studentsDashboard').style.display = 'block';
-  document.getElementById('dashboardHeader').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <div>
-        <div style="font-size:1.1rem;font-weight:800;color:#1a3a5c">${name}</div>
-        <div style="font-size:0.78rem;color:#f0a500;font-weight:700;letter-spacing:0.1em">${code}</div>
-      </div>
-      <button class="btn-secondary" onclick="document.getElementById('studentsDashboard').style.display='none'">Close</button>
-    </div>`;
+  document.getElementById('dashboardHeader').innerHTML = "";
 
   buildTeacherTabs(code);
-  document.getElementById('studentsDashboard').scrollIntoView({ behavior: 'smooth' });
 }
 
 function buildTeacherTabs(selectedCode) {
   const tabsEl = document.getElementById('teacherTabs');
   const tabs = [{ id: 'all', label: 'All Students' }];
+
   teacherClasses.forEach(cls => tabs.push({ id: cls.class_code, label: cls.class_name }));
   tabs.push({ id: 'help', label: 'Needs Help' });
 
@@ -119,43 +145,53 @@ function switchTeacherTab(tabId, btn) {
 
 function renderStudents(filter) {
   let sessions = allSessions;
-  if (filter === 'help') sessions = allSessions.filter(s => s.overall < 70);
-  else if (filter !== 'all') sessions = allSessions.filter(s => s.class_code === filter);
+
+  if (filter === 'help') {
+    sessions = allSessions.filter(s => s.overall < 70);
+  } else if (filter !== 'all') {
+    sessions = allSessions.filter(s => s.class_code === filter);
+  }
 
   const list = document.getElementById('studentsList');
+
   if (!sessions.length) {
-    list.innerHTML = `<div class="empty-state"><div class="icon">📊</div><p>No students in this category yet.</p></div>`;
+    list.innerHTML = `
+      <div class="teacher-student-panel">
+        <div class="teacher-empty-message">No students yet.</div>
+      </div>
+    `;
     return;
   }
 
-  list.innerHTML = sessions.map(s => {
-    const cls = s.overall >= 85 ? 'score-high' : s.overall >= 70 ? 'score-mid' : 'score-low';
-    const date = new Date(s.created_at).toLocaleDateString();
-    const className = teacherClasses.find(c => c.class_code === s.class_code)?.class_name || s.class_code;
-    const words = s.difficult_words && s.difficult_words.length > 0
-      ? s.difficult_words.map(w => `<span class="diff-word-chip">${w.word} ${w.score}%</span>`).join('')
-      : '<span style="font-size:0.75rem;color:#aaa">No difficult words</span>';
-    return `
-      <div class="student-card" onclick="openStudentDetail(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-        <div class="student-card-top">
-          <div>
-            <div class="student-card-name">${s.student_name}</div>
-            <div class="student-card-meta">Grade ${s.grade} · ${s.passage_title} · ${date}</div>
-            <span class="class-badge">${className}</span>
-          </div>
-          <div class="score-pill ${cls}">${s.overall}%</div>
-        </div>
-        <div class="difficult-words-row">${words}</div>
-      </div>`;
-  }).join('');
+  list.innerHTML = `
+    <div class="teacher-student-panel">
+      <div class="teacher-student-grid">
+        ${sessions.map(s => {
+          const safeSession = JSON.stringify(s).replace(/'/g, "&#39;");
+          return `
+            <div class="teacher-student-row">
+              <div class="student-avatar"></div>
+
+              <button class="teacher-student-pill" onclick='openStudentDetail(${safeSession})'>
+                <span class="teacher-student-name">${s.student_name}</span>
+                <span class="teacher-student-score">${s.overall}%</span>
+                <span class="teacher-stars">${getStars(s.overall)}</span>
+                <span class="teacher-arrow">→</span>
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function openStudentDetail(session) {
   const className = teacherClasses.find(c => c.class_code === session.class_code)?.class_name || session.class_code;
+
   document.getElementById('detailName').innerText = session.student_name;
   document.getElementById('detailMeta').innerText = `Grade ${session.grade} · ${className} · ${new Date(session.created_at).toLocaleDateString()}`;
 
-  const cls = session.overall >= 85 ? 'score-high' : session.overall >= 70 ? 'score-mid' : 'score-low';
   document.getElementById('detailScores').innerHTML = `
     <div class="score-badge"><div class="num">${session.accuracy}</div><div class="lbl">Accuracy</div></div>
     <div class="score-badge"><div class="num">${session.fluency}</div><div class="lbl">Fluency</div></div>
@@ -163,6 +199,7 @@ function openStudentDetail(session) {
     <div class="score-badge gold"><div class="num">${session.overall}</div><div class="lbl">Overall</div></div>`;
 
   const words = session.difficult_words || [];
+
   if (words.length > 0) {
     document.getElementById('detailWordsSection').style.display = 'block';
     document.getElementById('detailWords').innerHTML = words.map(w => {
@@ -182,4 +219,6 @@ function openStudentDetail(session) {
   document.getElementById('studentModal').classList.add('open');
 }
 
-function closeStudentModal() { document.getElementById('studentModal').classList.remove('open'); }
+function closeStudentModal() {
+  document.getElementById('studentModal').classList.remove('open');
+}
