@@ -18,6 +18,23 @@
   <div id="headerRight"></div>
 </header>
 
+<div class="bookworm-panel" id="bookwormPanel">
+  <div class="bookworm-header">
+    <span style="font-size:2rem">📚</span>
+    <div>
+      <div style="font-weight:800;font-size:1rem">Bookworm</div>
+      <div style="font-size:0.72rem;opacity:0.8">Your reading tutor</div>
+    </div>
+    <button onclick="closeBookworm()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;color:white;border-radius:8px;padding:0.3rem 0.75rem;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:600">Close</button>
+  </div>
+  <div class="bookworm-messages" id="bookwormMessages"></div>
+  <div class="bookworm-input-row">
+    <input type="text" class="bookworm-input" id="bookwormInput" placeholder="Type or tap 🎙️ to speak..." onkeydown="if(event.key==='Enter')bookwormSend()" />
+    <button class="bookworm-mic-btn" id="bookwormMicBtn" onclick="toggleBookwormMic()">🎙️</button>
+    <button class="bookworm-send-btn" onclick="bookwormSend()">➤</button>
+  </div>
+</div>
+
 <div class="word-detail-modal" id="wordModal">
   <div class="word-detail-card">
     <div class="word-detail-word" id="modalWord"></div>
@@ -216,6 +233,7 @@
 
       <div class="btn-row">
         <button class="btn-gold" onclick="speakFeedback()">🔊 Hear feedback</button>
+        <button class="btn-bookworm" onclick="openBookwormAfterReading()">📚 Chat with Bookworm</button>
         <button class="btn-secondary" onclick="tryAgain()">Try again</button>
         <button class="btn-secondary" onclick="nextPassage()">Choose another book</button>
       </div>
@@ -350,6 +368,7 @@
 <script src="js/tts.js"></script>
 <script src="js/feedback.js"></script>
 <script src="js/recording.js"></script>
+<script src="js/bookworm.js"></script>
 <script src="js/library.js"></script>
 <script src="js/student-auth.js"></script>
 <script src="js/app.js"></script>
