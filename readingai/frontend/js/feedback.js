@@ -142,27 +142,47 @@ async function hearWordInline(word) { await speakTextSlow(word); }
 async function speakFeedback() { if (lastFeedback) await speakText(lastFeedback); }
 
 async function saveSession(acc, flu, com, overall, badWords) {
-  if (!currentClassCode) return;
-  try {
-    await sb.from('student_sessions').insert({
-      class_code: currentClassCode,
-      student_name: currentStudent.name,
-      grade: currentStudent.grade,
-      city: '',
-      passage_title: document.getElementById('passageTitle').innerText,
-      accuracy: acc,
-      fluency: flu,
-      completeness: com,
-      overall,
-      difficult_words: badWords.map(w => ({
-        word: w.Word,
-        score: Math.round(w.PronunciationAssessment.AccuracyScore),
-        pos: wordDataCache[w.Word.toLowerCase()]?.pos || '',
-        definition: wordDataCache[w.Word.toLowerCase()]?.definition || ''
-      })),
-      feedback: lastFeedback
-    });
-  } catch (err) {
-    console.error('Session save error:', err);
+  const title = document.getElementById('passageTitle').innerText;
+  const difficultWordNames = badWords.map(w => w.Word);
+
+  if (currentClassCode) {
+    try {
+      await sb.from('student_sessions').insert({
+        class_code: currentClassCode,
+        student_name: currentStudent.name,
+        grade: currentStudent.grade,
+        city: '',
+        passage_title: title,
+        accuracy: acc,
+        fluency: flu,
+        completeness: com,
+        overall,
+        difficult_words: badWords.map(w => ({
+          word: w.Word,
+          score: Math.round(w.PronunciationAssessment.AccuracyScore),
+          pos: wordDataCache[w.Word.toLowerCase()]?.pos || '',
+          definition: wordDataCache[w.Word.toLowerCase()]?.definition || ''
+        })),
+        feedback: lastFeedback
+      });
+    } catch (err) {
+      console.error('Session save error:', err);
+    }
+  }
+
+  if (currentStudent.userId) {
+    try {
+      await sb.from('reading_sessions').insert({
+        student_id: currentStudent.userId,
+        book_title: title,
+        accuracy_score: acc,
+        fluency_score: flu,
+        completeness_score: com,
+        overall_score: overall,
+        difficult_words: difficultWordNames
+      });
+    } catch (err) {
+      console.error('Reading session save error:', err);
+    }
   }
 }

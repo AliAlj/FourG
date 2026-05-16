@@ -26,6 +26,7 @@ let currentLibraryFilter = null;
 let selectedBookCoverUrl = '';
 let bookSearchTimeout = null;
 let gutenbergTextUrl = null;
+let currentAssignments = [];
 const GOOGLE_AI_KEY = CONFIG.GOOGLE_AI_KEY;
 const GOOGLE_TTS_KEY = CONFIG.GOOGLE_TTS_KEY;
 const GROQ_API_KEY = CONFIG.GROQ_API_KEY;

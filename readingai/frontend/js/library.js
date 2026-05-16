@@ -15,6 +15,13 @@ async function loadLibraryBooks() {
       allBooks = [...data.map(b => ({ ...b, source: 'teacher' })), ...allBooks];
     }
   } catch { }
+  currentAssignments = [];
+  if (currentClassCode) {
+    try {
+      const { data: asgn } = await sb.from('assignments').select('book_title').eq('class_code', currentClassCode);
+      currentAssignments = (asgn || []).map(a => a.book_title.toLowerCase());
+    } catch {}
+  }
   document.getElementById('libraryLoading').style.display = 'none';
   renderLibrary(allBooks, currentLibraryFilter);
 }
@@ -22,7 +29,12 @@ async function loadLibraryBooks() {
 function renderLibrary(books, gradeFilter) {
   libraryBooks = books;
   const eligible = books.filter(b => b.grade <= currentStudent.grade);
-  const filtered = gradeFilter ? eligible.filter(b => b.grade === gradeFilter) : eligible;
+  const sorted = [...eligible].sort((a, b) => {
+    const aAssigned = currentAssignments.includes(a.title.toLowerCase()) ? 1 : 0;
+    const bAssigned = currentAssignments.includes(b.title.toLowerCase()) ? 1 : 0;
+    return bAssigned - aAssigned;
+  });
+  const filtered = gradeFilter ? sorted.filter(b => b.grade === gradeFilter) : sorted;
   const grades = [...new Set(eligible.map(b => b.grade))].sort();
   document.getElementById('libraryFilters').innerHTML =
     `<button class="library-filter-chip ${!gradeFilter ? 'active' : ''}" onclick="filterLibrary(null)">All</button>` +
@@ -40,6 +52,8 @@ function renderLibrary(books, gradeFilter) {
     const coverClass = `grade-${Math.min(book.grade, 7)}`;
     const teacherBadge = book.source === 'teacher'
       ? '<span class="source-teacher-badge">Teacher</span>' : '';
+    const assignedBadge = currentAssignments.includes(book.title.toLowerCase())
+      ? '<span class="source-assigned-badge">📌 Assigned</span>' : '';
     const coverHtml = book.cover_url
       ? `<div class="book-card-img-container">
           <img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">
@@ -56,7 +70,7 @@ function renderLibrary(books, gradeFilter) {
       <div class="book-card" onclick="selectLibraryBook(${idx})">
         ${coverHtml}
         <div class="book-card-body">
-          <div class="book-card-title">${book.title}${teacherBadge}</div>
+          <div class="book-card-title">${book.title}${teacherBadge}${assignedBadge}</div>
           ${book.author ? `<div class="book-card-author">by ${book.author}</div>` : ''}
           <div class="book-card-excerpt">${excerpt}</div>
         </div>

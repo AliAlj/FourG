@@ -164,11 +164,45 @@
   </div>
 </div>
 
+<div class="screen" id="progressScreen">
+  <div class="container">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem">&#8592; Library</button>
+        <h2 style="margin:0">My Reading Progress</h2>
+      </div>
+      <div id="progressStreak"></div>
+      <div id="progressStats"></div>
+      <div id="progressLevel"></div>
+      <div id="progressWordBtn"></div>
+      <div id="progressList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="wordPracticeScreen">
+  <div class="container">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <button class="btn-secondary" onclick="goToProgress()" style="font-size:0.78rem;padding:0.35rem 0.8rem">&#8592; Progress</button>
+        <h2 style="margin:0">Word Practice</h2>
+      </div>
+      <p class="subtitle" style="margin-bottom:1.25rem">These are words you've struggled with. Tap 🔊 to hear them pronounced correctly.</p>
+      <div id="wordPracticeList"></div>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="libraryScreen">
   <div class="library-screen-container">
     <div class="card">
-      <h2>Library</h2>
-      <p class="subtitle" id="libraryWelcome">Choose a book to read out loud.</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+        <div>
+          <h2>Library</h2>
+          <p class="subtitle" id="libraryWelcome">Choose a book to read out loud.</p>
+        </div>
+        <button class="btn-secondary" onclick="goToProgress()" style="font-size:0.78rem;padding:0.35rem 0.8rem">📈 My Progress</button>
+      </div>
       <div class="library-filters" id="libraryFilters"></div>
     </div>
     <div class="loading" id="libraryLoading">
@@ -342,10 +376,13 @@
       </div>
 
       <div id="libraryAdminList"></div>
+      <div id="assignmentsAdmin"></div>
     </div>
 
     <div class="card" id="studentsDashboard" style="display:none">
       <div id="dashboardHeader"></div>
+      <div id="analyticsOverview"></div>
+      <div id="analyticsWords"></div>
       <div class="teacher-tabs" id="teacherTabs"></div>
       <div id="studentsList"></div>
     </div>
@@ -360,8 +397,10 @@
 <script src="js/recording.js"></script>
 <script src="js/bookworm.js"></script>
 <script src="js/library.js"></script>
+<script src="js/progress.js"></script>
 <script src="js/student-auth.js"></script>
 <script src="js/app.js"></script>
+<script src="js/teacher-analytics.js"></script>
 <script src="js/teacher.js"></script>
 </body>
 </html>
