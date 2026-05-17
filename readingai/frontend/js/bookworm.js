@@ -178,17 +178,20 @@ ${sessionLines}
 The student just asked: "What are my reading scores so far?"
 Respond warmly in 3-4 sentences using only the exact numbers above. Highlight their best score and average. Encourage them. Do not mention any book, score, or streak not listed above.`;
 
-    const res = await fetch('https://fourg-44vh.onrender.com/api/bookworm', {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/ibm-chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
       body: JSON.stringify({
-        system: factPrompt,
-        messages: [],
-        max_tokens: 150
+        messages: [{ role: 'user', content: factPrompt }],
+        max_tokens: 150,
+        project_id: IBM_PROJECT_ID
       })
     });
     const data = await res.json();
-    const reply = data.reply || `You've read ${sessions.length} session${sessions.length > 1 ? 's' : ''} with an average of ${avg}% and a best score of ${best}%, ${currentStudent.name}! Keep it up! 🌟`;
+    const reply = data.content || `You've read ${sessions.length} session${sessions.length > 1 ? 's' : ''} with an average of ${avg}% and a best score of ${best}%, ${currentStudent.name}! Keep it up! 🌟`;
 
     addBookwormBubble(reply, 'worm');
     bookwormHistory.push({ role: 'user', content: 'What are my reading scores so far?' });
