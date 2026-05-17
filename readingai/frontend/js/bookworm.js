@@ -3,12 +3,20 @@ let bookwormContext = null;
 let bookwormRecognizer = null;
 let bookwormListening = false;
 let bookwormMemory = '';
+let bookwormChallengeWords = [];
+let bookwormConfidenceAsked = false;
+let bookwormConfidenceLevel = null;
+let bookwormRecurringWords = [];
 
 function openBookworm(context) {
   const resumingSameBook = bookwormContext?.title === context.title && bookwormHistory.length > 0;
 
   bookwormContext = context;
   bookwormMemory = '';
+  bookwormChallengeWords = (context.difficultWords || []).filter(Boolean);
+  bookwormConfidenceAsked = false;
+  bookwormConfidenceLevel = null;
+  bookwormRecurringWords = [];
   document.getElementById('bookwormPanel').classList.add('open');
 
   if (resumingSameBook) {
@@ -50,19 +58,25 @@ function openBookwormFromLibrary(idx) {
 }
 
 function openBookwormHelp() {
-  bookwormContext = null;
+  bookwormContext = { title: null, passage: null, score: null, difficultWords: [], studentName: currentStudent?.name || 'there', grade: currentStudent?.grade || '' };
   bookwormHistory = [];
+  bookwormChallengeWords = [];
+  bookwormConfidenceAsked = false;
+  bookwormConfidenceLevel = null;
+  bookwormRecurringWords = [];
   document.getElementById('bookwormMessages').innerHTML = '';
   document.getElementById('bookwormPanel').classList.add('open');
   const greeting = "Hi! I'm BookWorm, your reading helper. How can I help you today?";
   addBookwormBubble(greeting, 'worm');
   bookwormHistory.push({ role: 'assistant', content: greeting });
   bookwormSpeak(greeting);
+  loadBookwormMemory();
 }
 
 function closeBookworm() {
   document.getElementById('bookwormPanel').classList.remove('open');
   stopBookwormListening();
+  stopAllSpeech();
   saveBookwormSession();
 }
 
@@ -91,9 +105,82 @@ async function handleStudentMessage(text) {
   const typingEl = addBookwormBubble('Bookworm is thinking...', 'typing');
   typingEl.id = 'bookwormTyping';
 
-  const reply = await callGroq();
-  document.getElementById('bookwormTyping')?.remove();
+  let reply;
+  try {
+    reply = await callGroq();
+  } catch {
+    reply = `That's a great thought! What else is on your mind?`;
+  } finally {
+    document.getElementById('bookwormTyping')?.remove();
+  }
 
+  addBookwormBubble(reply, 'worm');
+  bookwormHistory.push({ role: 'assistant', content: reply });
+  bookwormSpeak(reply);
+
+  // Show confidence check-in after the student's first reply in a post-reading session
+  const studentTurns = bookwormHistory.filter(m => m.role === 'user').length;
+  if (!bookwormConfidenceAsked && bookwormContext?.score !== null && studentTurns === 1) {
+    setTimeout(showConfidenceButtons, 600);
+  }
+}
+
+function showStruggleWordDrill(words) {
+  const messages = document.getElementById('bookwormMessages');
+  if (!messages) return;
+  const word = words[0]; // start with the most-repeated word
+  const el = document.createElement('div');
+  el.className = 'bookworm-bubble worm';
+  el.innerHTML = `I noticed you've had trouble with <strong>"${word}"</strong> a few times. Want to practice it right now?
+    <div class="confidence-btns" style="margin-top:0.5rem">
+      <button onclick="startWordDrill('${word}')">✅ Yes, let's do it!</button>
+      <button onclick="this.closest('.bookworm-bubble').remove()">Maybe later</button>
+    </div>`;
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+  bookwormSpeak(`I noticed you've had trouble with "${word}" a few times. Want to practice it right now?`);
+}
+
+function startWordDrill(word) {
+  // Remove the offer bubble
+  document.querySelectorAll('.bookworm-bubble.worm').forEach(el => {
+    if (el.innerHTML.includes(word) && el.querySelector('.confidence-btns')) el.remove();
+  });
+  const prompt = `Let's practice! Can you use the word "${word}" in a sentence?`;
+  addBookwormBubble(prompt, 'worm');
+  bookwormHistory.push({ role: 'assistant', content: prompt });
+  bookwormSpeak(prompt);
+}
+
+function showConfidenceButtons() {
+  bookwormConfidenceAsked = true;
+  const messages = document.getElementById('bookwormMessages');
+  const el = document.createElement('div');
+  el.className = 'bookworm-bubble worm';
+  el.id = 'confidenceBubble';
+  el.innerHTML = `How did reading feel today?
+    <div class="confidence-btns">
+      <button onclick="handleConfidenceChoice('easy')">😊 Easy</button>
+      <button onclick="handleConfidenceChoice('medium')">😐 Medium</button>
+      <button onclick="handleConfidenceChoice('hard')">😓 Hard</button>
+    </div>`;
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function handleConfidenceChoice(level) {
+  bookwormConfidenceLevel = level;
+  document.getElementById('confidenceBubble')?.remove();
+  const label = level === 'easy' ? '😊 Easy' : level === 'medium' ? '😐 Medium' : '😓 Hard';
+  addBookwormBubble(label, 'student');
+  bookwormHistory.push({ role: 'user', content: `Reading felt ${level} today.` });
+
+  const replies = {
+    easy: `That's awesome — feeling confident means you're growing as a reader! 📚 What part of the passage did you like best?`,
+    medium: `Medium is totally fine — that means you're being challenged in just the right way! What was the trickiest part?`,
+    hard: `Thank you for being honest — hard readings are how we get stronger! What made it feel difficult?`
+  };
+  const reply = replies[level];
   addBookwormBubble(reply, 'worm');
   bookwormHistory.push({ role: 'assistant', content: reply });
   bookwormSpeak(reply);
@@ -112,12 +199,20 @@ async function callGroq() {
     ? `Reading fluency score from this session: ${bookwormContext.score}% (this is a pronunciation and fluency score from the AI speech tool, not a school grade — you have full access to it and should use it)`
     : 'Reading score: not yet available (student has not read aloud yet)';
 
-  const system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students.
+  const challengeBlock = bookwormChallengeWords.length > 0
+    ? `\nVOCABULARY CHALLENGE: After 2 comprehension exchanges, shift into vocab practice. Pick one of these mispronounced words (${bookwormChallengeWords.slice(0, 3).join(', ')}) and say: "Let's practice a tricky word! Can you use '____' in a sentence?" After they try, praise the effort and give a one-sentence tip. Then try another word. Keep it playful — like a game, not a quiz. After 2-3 words return to comprehension.`
+    : '';
+
+  const recurringBlock = bookwormRecurringWords.length > 0
+    ? `\nRECURRING STRUGGLE WORDS — this student has mispronounced these across multiple sessions: ${bookwormRecurringWords.join(', ')}. Bring one up early and naturally: "Hey, last time you had trouble with '____' — want to try it again today?"`
+    : '';
+
+  const system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students.${currentLanguage === 'es' ? ' Respond only in Spanish. Use simple, friendly Spanish for an elementary student.' : ''}
 Student name: ${bookwormContext.studentName}, Grade ${bookwormContext.grade}
 Book/passage they read: "${bookwormContext.title}"
 Opening of the passage: "${(bookwormContext.passage || '').substring(0, 250)}"
 ${scoreInfo}
-Words they struggled to pronounce: ${difficultList}${memoryBlock}
+Words they struggled to pronounce today: ${difficultList}${memoryBlock}${challengeBlock}${recurringBlock}
 
 Your rules:
 - Keep every reply to 2-3 short sentences max — kids lose focus quickly
@@ -181,6 +276,24 @@ async function loadBookwormMemory() {
     const parts = [];
 
     if (readings && readings.length > 0) {
+      // Count word frequency across sessions to find recurring struggles
+      const wordCount = {};
+      readings.forEach(r => {
+        (r.difficult_words || []).forEach(w => {
+          const word = (typeof w === 'string' ? w : w?.word || '').toLowerCase().trim();
+          if (word) wordCount[word] = (wordCount[word] || 0) + 1;
+        });
+      });
+      bookwormRecurringWords = Object.entries(wordCount)
+        .filter(([, count]) => count >= 3)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([word]) => word);
+
+      if (bookwormRecurringWords.length > 0) {
+        showStruggleWordDrill(bookwormRecurringWords);
+      }
+
       const readingLines = readings.filter(r => r.overall_score != null && !isNaN(r.overall_score)).map(r => {
         const daysAgo = Math.round((Date.now() - new Date(r.created_at)) / 86400000);
         const when = daysAgo === 0 ? 'today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
@@ -219,6 +332,7 @@ async function saveBookwormSession() {
       student_id: currentStudent.userId,
       book_title: bookwormContext?.title || 'Unknown',
       reading_score: bookwormContext?.score ?? null,
+      confidence_level: bookwormConfidenceLevel,
       summary
     });
   } catch (err) {
@@ -266,6 +380,7 @@ async function generateSessionSummary() {
 // ── TTS & mic ─────────────────────────────────────────────────────────────────
 
 async function bookwormSpeak(text) {
+  stopAllSpeech();
   try {
     const res = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_KEY}`,
@@ -281,7 +396,10 @@ async function bookwormSpeak(text) {
     );
     const data = await res.json();
     if (data.audioContent) {
-      new Audio(`data:audio/mp3;base64,${data.audioContent}`).play();
+      const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+      _activeTTSAudio = audio;
+      audio.onended = () => { _activeTTSAudio = null; };
+      audio.play();
       return;
     }
   } catch { }
