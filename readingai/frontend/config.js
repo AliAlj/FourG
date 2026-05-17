@@ -2,7 +2,7 @@ const CONFIG = {
   AZURE_KEY: "3jUKnlzXojp4XxOPTXJCd4BUX9x8DibnmVPCc8RlnxcerAMxVkuXJQQJ99CEACYeBjFXJ3w3AAAYACOGZJnx",
   AZURE_REGION: "eastus",
   IBM_PROJECT_ID: "eeea5b6b-d052-40dd-8a46-eeba801ccb5b",
-  IBM_API_KEY: "iQA7ph20PEFnB_pyEAdyCqkPnCnfcrqAX9JoDoVjcIMf",
+  IBM_API_KEY: "nbcwZ5dKmKiRS8Tg7X49GxCIgOgmBiV1-SIxxGmuYMH8",
   WX_URL: "https://us-south.ml.cloud.ibm.com",
   MODEL_ID: "ibm/granite-4-h-small",
   SUPABASE_URL: "https://rdrlivuqsuxaaehikrwg.supabase.co",
