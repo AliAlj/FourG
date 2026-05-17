@@ -13,7 +13,7 @@
 [![Made in Michigan](https://img.shields.io/badge/Made%20in-Michigan-f0a500?style=for-the-badge)](#)
 
 [🚀 Live Demo](https://fourg-1.onrender.com) · [📖 Docs](#setup) · [🎥 Demo Video](#)
-
+https://canva.link/3cv2uxo1ifp4nnl
 </div>
 
 ---
