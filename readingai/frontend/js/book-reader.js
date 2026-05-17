@@ -209,7 +209,7 @@ function finishBook() {
   document.getElementById('scoreOverall').innerText = avg;
 
   const fullText = readerBook.pages.map(p => p.text).join(' ');
-  startComprehensionQuiz(fullText, readerBook.title, () => showScreen('bookFinishScreen'));
+  startComprehensionQuiz(fullText, readerBook.title, () => showScreen('bookFinishScreen'), readerBook.grade);
 }
 
 async function saveReaderPageSession(overall, acc, flu, com, badWords) {

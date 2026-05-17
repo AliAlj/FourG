@@ -205,7 +205,7 @@ function renderStudentOverviewCards(profiles, byStudent, confidenceByStudent = {
       <div class="soc-top">
         <div>
           <div class="soc-name">${p.name} ${confBadge}</div>
-          <div class="soc-grade">Grade ${p.grade}</div>
+          <div class="soc-grade">Grade ${p.grade}${p.email ? ` · <span style="font-weight:400;color:#999">${p.email}</span>` : ''}</div>
         </div>
         <div style="text-align:right">
           <div class="soc-score" style="color:${avg !== null ? analyticsScoreColor(avg) : '#bbb'}">${avg !== null ? avg + '%' : '—'}</div>

@@ -40,7 +40,8 @@ async function studentSignUp() {
     name,
     grade,
     class_code: code,
-    class_name: classData.class_name
+    class_name: classData.class_name,
+    email
   });
 
   currentStudent = { name, grade, userId: authData.user.id };
