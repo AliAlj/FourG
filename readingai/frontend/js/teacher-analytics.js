@@ -706,3 +706,5 @@ function closeNotesModal() {
   document.getElementById('notesModal').classList.remove('open');
   _notesStudentId = null;
 }
+
+
