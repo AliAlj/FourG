@@ -156,179 +156,55 @@
   </div>
 </div>
 
-<div class="screen" id="studentAuthScreen" style="position:relative;background:#4B7FD1">
+<div class="screen" id="studentAuthScreen" style="position:relative">
+  <img src="assets/studentTest.png" alt="" style="position:absolute;right:80px;top:50%;transform:translateY(-50%);width:280px;opacity:0.9;pointer-events:none;z-index:0" />
+  <div class="container" style="position:relative;z-index:1">
+    <div class="card" style="margin-top:1rem">
+      <div class="lang-toggle">
+        <button class="lang-btn" id="langEn" onclick="setLanguage('en')">🇺🇸 English</button>
+        <button class="lang-btn" id="langEs" onclick="setLanguage('es')">🇲🇽 Español</button>
+      </div>
+      <h2 data-en="Student Account" data-es="Cuenta de Estudiante">Student Account</h2>
+      <p class="subtitle" data-en="Sign in to your account, or create a new one." data-es="Inicia sesión o crea una cuenta nueva.">Sign in to your account, or create a new one.</p>
 
-  <!-- KEEPING STICKY NOTE -->
-  <img src="assets/studentTest.png" alt=""
-    style="position:absolute;right:80px;top:50%;transform:translateY(-50%);
-    width:280px;opacity:0.9;pointer-events:none;z-index:0" />
-
-  <div style="
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    position:relative;
-    z-index:1;
-    padding:2rem;
-  ">
-
-    <div style="
-      width:650px;
-      background:#E9ECF7;
-      border-radius:32px;
-      padding:3rem 3.5rem;
-      box-shadow:0 8px 18px rgba(0,0,0,0.15);
-      position:relative;
-    ">
-
-      <!-- LANGUAGE TOGGLE -->
-      <div class="lang-toggle" style="position:absolute;top:20px;right:20px">
-        <button class="lang-btn" id="langEn" onclick="setLanguage('en')">🇺🇸</button>
-        <button class="lang-btn" id="langEs" onclick="setLanguage('es')">🇲🇽</button>
+      <div class="teacher-tabs" style="margin-bottom:1.25rem">
+        <button class="teacher-tab" id="tabSignUp" onclick="switchStudentTab('signup')" data-en="Sign Up" data-es="Registrarse">Sign Up</button>
+        <button class="teacher-tab active" id="tabSignIn" onclick="switchStudentTab('signin')" data-en="Sign In" data-es="Iniciar sesión">Sign In</button>
       </div>
 
-      <h2 style="
-        text-align:center;
-        font-family:'Marker Felt', cursive;
-        font-size:4rem;
-        color:#0D1843;
-        margin-bottom:2.5rem;
-        line-height:1;
-      ">
-        Student Sign-in
-      </h2>
+      <div id="signUpForm" style="display:none">
+        <div class="error-msg" id="signUpError"></div>
+        <div class="form-group">
+          <label data-en="Your first name" data-es="Tu nombre">Your first name</label>
+          <input type="text" id="sName" placeholder="e.g. Marcus" />
+        </div>
+        <div class="form-group">
+          <label data-en="Class code (from your teacher)" data-es="Código de clase (de tu maestra)">Class code (from your teacher)</label>
+          <input type="text" class="code-input" id="sClassCode" placeholder="ABC123" maxlength="6" style="text-transform:uppercase" />
+        </div>
+        <div class="form-group">
+          <label data-en="Email address" data-es="Correo electrónico">Email address</label>
+          <input type="email" id="sEmail" placeholder="you@email.com" />
+        </div>
+        <div class="form-group">
+          <label data-en="Password" data-es="Contraseña">Password</label>
+          <input type="password" id="sPassword" placeholder="At least 6 characters" />
+        </div>
+        <button class="btn-primary" onclick="studentSignUp()" data-en="Create account" data-es="Crear cuenta">Create account</button>
+      </div>
 
-      <!-- SIGN IN FORM -->
       <div id="signInForm">
-
         <div class="error-msg" id="signInError"></div>
-
-        <div style="margin-bottom:2rem">
-          <label style="
-            display:block;
-            margin-bottom:0.7rem;
-            font-family:'Marker Felt', cursive;
-            font-size:2rem;
-            color:#0D1843;
-          ">
-            Email address
-          </label>
-
-          <input
-            type="email"
-            id="sEmailIn"
-            placeholder=""
-            style="
-              width:100%;
-              height:72px;
-              border:4px solid #0D1843;
-              border-radius:24px;
-              background:white;
-              padding:0 1.25rem;
-              font-size:1rem;
-              font-family:inherit;
-              outline:none;
-              color:#111;
-            "
-          />
+        <div class="form-group">
+          <label data-en="Email address" data-es="Correo electrónico">Email address</label>
+          <input type="email" id="sEmailIn" placeholder="you@email.com" />
         </div>
-
-        <div style="margin-bottom:2rem">
-          <label style="
-            display:block;
-            margin-bottom:0.7rem;
-            font-family:'Marker Felt', cursive;
-            font-size:2rem;
-            color:#0D1843;
-          ">
-            Password
-          </label>
-
-          <input
-            type="password"
-            id="sPasswordIn"
-            placeholder=""
-            style="
-              width:100%;
-              height:72px;
-              border:4px solid #0D1843;
-              border-radius:24px;
-              background:white;
-              padding:0 1.25rem;
-              font-size:1rem;
-              font-family:inherit;
-              outline:none;
-              color:#111;
-            "
-          />
+        <div class="form-group">
+          <label data-en="Password" data-es="Contraseña">Password</label>
+          <input type="password" id="sPasswordIn" placeholder="Your password" />
         </div>
-
-        <div style="text-align:center;margin-top:2.5rem">
-          <button
-            onclick="studentSignIn()"
-            style="
-              background:#0D1843;
-              color:white;
-              border:none;
-              border-radius:22px;
-              padding:1rem 2.7rem;
-              font-family:'Marker Felt', cursive;
-              font-size:2rem;
-              cursor:pointer;
-              box-shadow:0 5px 10px rgba(0,0,0,0.18);
-            "
-          >
-            Sign in
-          </button>
-        </div>
-
+        <button class="btn-primary" onclick="studentSignIn()" data-en="Sign in" data-es="Iniciar sesión">Sign in</button>
       </div>
-
-      <div style="
-        text-align:center;
-        margin-top:2rem;
-        font-size:1.5rem;
-        font-family:'Marker Felt', cursive;
-      ">
-        <span style="color:#92949B;">
-          New student?
-        </span>
-
-        <a
-          href="#"
-          onclick="switchStudentTab('signup')"
-          style="
-            color:#0D1843;
-            text-decoration:none;
-            font-weight:600;
-          "
-        >
-          Create account
-        </a>
-      </div>
-
-      <div style="text-align:center;margin-top:1.5rem">
-        <button
-          onclick="showScreen('roleScreen')"
-          style="
-            background:#E9ECF7;
-            color:#0D1843;
-            border:4px solid #0D1843;
-            border-radius:18px;
-            padding:0.6rem 1.8rem;
-            font-family:'Marker Felt', cursive;
-            font-size:1.6rem;
-            cursor:pointer;
-          "
-        >
-          Back
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>
 
       <div style="text-align:center;margin-top:1rem">
         <button class="btn-secondary" onclick="showScreen('roleScreen')" style="width:auto" data-en="Back" data-es="Atrás">Back</button>
@@ -337,160 +213,50 @@
   </div>
 </div>
 
-<div class="screen" id="progressScreen" style="background:#4B7FD1;min-height:100vh;width:100%;padding:2rem 0;">
-  <div style="
-    max-width:1050px;
-    margin:0 auto;
-    font-family:'Marker Felt', cursive;
-    color:#0D1843;
-  ">
-
-    <h1 style="
-      text-align:center;
-      font-size:3.2rem;
-      margin:0 0 1rem;
-      color:#0D1843;
-    ">
-      My Reading Progress
-    </h1>
-
-    <div id="progressStreak" style="display:none"></div>
-
-    <div id="progressStats" style="
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:4rem;
-  margin-bottom:1.8rem;
-">
-
-  <div style="
-    background:#E9ECF7;
-    border-radius:24px;
-    padding:1rem;
-    text-align:center;
-    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-  ">
-    <div style="font-size:4rem;color:#0D1843">2</div>
-    <div style="font-size:2rem;color:#0D1843">Books Read</div>
-  </div>
-
-  <div style="
-    background:#E9ECF7;
-    border-radius:24px;
-    padding:1rem;
-    text-align:center;
-    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-  ">
-    <div style="font-size:4rem;color:#0D1843">72%</div>
-    <div style="font-size:2rem;color:#0D1843">Avg Score</div>
-  </div>
-
-  <div style="
-    background:#E9ECF7;
-    border-radius:24px;
-    padding:1rem;
-    text-align:center;
-    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-  ">
-    <div style="font-size:4rem;color:#0D1843">97%</div>
-    <div style="font-size:2rem;color:#0D1843">Best Score</div>
-  </div>
-
-</div>
-
-    <div style="
-  background:#E9ECF7;
-  border-radius:20px;
-  padding:0.75rem 1.5rem;
-  margin-bottom:1.5rem;
-">
-
-  <div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:1.6rem;
-    color:#0D1843;
-    margin-bottom:0.5rem;
-  ">
-    <span>Reading Level</span>
-    <span>Grade 4</span>
-  </div>
-
-  <div style="
-    width:100%;
-    height:18px;
-    background:#92949B;
-    border-radius:999px;
-    overflow:hidden;
-  ">
-    <div style="
-      width:87%;
-      height:100%;
-      background:black;
-    "></div>
-  </div>
-
-  <div style="
-    margin-top:0.5rem;
-    color:#92949B;
-    font-size:1.3rem;
-  ">
-    13% more to reach Grade 5 level
-  </div>
-
-</div>
-
-    <div style="
-      display:grid;
-      grid-template-columns:1.4fr 0.8fr;
-      gap:3.5rem;
-      align-items:center;
-    ">
-      <div style="
-        background:#E9ECF7;
-        min-height:250px;
-        border-radius:22px;
-        padding:1.5rem;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:#92949B;
-        font-size:1.5rem;
-      ">
-        <div id="progressChartWrap" style="width:100%;display:none;margin:0">
-          <canvas id="progressChart" height="180"></canvas>
+<div class="screen" id="bookReaderScreen">
+  <div class="container">
+    <div class="card" style="padding:1.25rem">
+      <div class="reader-nav">
+        <button class="btn-secondary" onclick="exitBookReader()" style="font-size:0.78rem;padding:0.35rem 0.8rem">&#8592; Library</button>
+        <div class="reader-progress-wrap">
+          <div class="reader-progress-bar" id="readerProgressBar"></div>
         </div>
-
-<div style="
-  color:#92949B;
-  font-size:2rem;
-  text-align:center;
-">
-  KEEP GRAPH
-</div>      </div>
-
-      <div style="text-align:center">
-
-        <button
-          onclick="goToWordPractice()"
-          style="
-            background:#0D1843;
-            color:white;
-            border:none;
-            border-radius:34px;
-            padding:1.4rem 3rem;
-            font-family:'Marker Felt', cursive;
-            font-size:2rem;
-            cursor:pointer;
-            box-shadow:0 6px 12px rgba(0,0,0,0.2);
-          "
-        >
-          PRACTICE WORDS
-        </button>
+        <span class="reader-page-label" id="readerPageLabel">Page 1 of 4</span>
       </div>
+      <div class="reader-title" id="readerTitle"></div>
+      <div class="reader-image-wrap">
+        <img class="reader-image" id="readerImage" src="" alt="" />
+      </div>
+      <div class="reader-text" id="readerText"></div>
+      <div style="text-align:center;margin-bottom:0.75rem">
+        <button class="btn-secondary" id="readerListenBtn" onclick="toggleReadAlong('readerText','readerListenBtn','readerMicBtn')">🔊 Listen first</button>
+      </div>
+      <div class="mic-section">
+        <button class="mic-btn" id="readerMicBtn" onclick="toggleReaderRecording()">🎙️</button>
+        <div class="mic-label" id="readerMicLabel">Tap the mic and read the page out loud</div>
+        <div class="transcript-box" id="readerTranscript" style="display:none"></div>
+      </div>
+      <div id="readerFeedback" style="display:none">
+        <div class="reader-score-row" id="readerScoreRow"></div>
+        <button class="btn-primary" id="readerNextBtn" onclick="readerNextPage()">Next Page →</button>
+      </div>
+<div class="screen" id="progressScreen">
+  <div class="container">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem">&#8592; Library</button>
+        <h2 style="margin:0">My Reading Progress</h2>
+      </div>
+      <div id="progressStreak"></div>
+      <div id="progressStats"></div>
+      <div id="progressChartWrap" style="display:none;margin:1.25rem 0">
+        <h3 style="font-size:0.95rem;color:#555;margin-bottom:0.75rem">Score Over Time</h3>
+        <canvas id="progressChart" height="180"></canvas>
+      </div>
+      <div id="progressLevel"></div>
+      <div id="progressWordBtn"></div>
+      <div id="progressList"></div>
     </div>
-
   </div>
 </div>
 
@@ -507,107 +273,31 @@
   </div>
 </div>
 
-<div class="screen" id="libraryScreen" style="background:#4B7FD1;min-height:100vh;width:100%;padding:2rem 0;">
-  <div style="
-    max-width:1000px;
-    margin:0 auto;
-    font-family:'Marker Felt', cursive;
-    color:#0D1843;
-  ">
-
-    <h1 style="
-      text-align:center;
-      color:#E9ECF7;
-      font-size:2.4rem;
-      margin-bottom:0.75rem;
-    ">
-      Choose a new book!
-    </h1>
-
-    <div style="
-      background:#E9ECF7;
-      border-radius:34px;
-      padding:1.5rem 2rem;
-      box-shadow:0 6px 12px rgba(0,0,0,0.18);
-      margin-bottom:1rem;
-    ">
-      <div id="libraryFilters" style="display:none"></div>
-      <div class="loading" id="libraryLoading">
-        <div class="dots"><span></span><span></span><span></span></div>
+<div class="screen" id="libraryScreen">
+  <div class="library-screen-container">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+        <div>
+          <h2>Library</h2>
+          <p class="subtitle" id="libraryWelcome">Choose a book to read out loud.</p>
+        </div>
+        <button class="btn-secondary" onclick="goToProgress()" style="font-size:0.78rem;padding:0.35rem 0.8rem">📈 My Progress</button>
       </div>
-
-      <div id="libraryGrid" style="
-        display:grid;
-        grid-template-columns:repeat(3, 1fr);
-        gap:1.5rem;
-        align-items:start;
-      "></div>
+      <div class="library-filters" id="libraryFilters"></div>
     </div>
+  </div>
+</div>
 
-    <div style="
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:2rem;
-      align-items:center;
-      margin-top:1rem;
-    ">
-
-      <div style="
-        background:#E9ECF7;
-        border-radius:34px;
-        min-height:230px;
-        padding:1.5rem;
-        box-shadow:0 6px 12px rgba(0,0,0,0.18);
-      ">
-        <h2 style="
-          text-align:center;
-          margin:0 0 1rem;
-          font-size:1.7rem;
-          color:#0D1843;
-        ">
-          Reading History
-        </h2>
-
-        <div id="libraryWelcome" style="display:none">
-          Choose a book to read out loud.
-        </div>
-      </div>
-
-      <div style="text-align:center">
-        <button
-          onclick="goToProgress()"
-          style="
-            background:#0D1843;
-            color:white;
-            border:none;
-            border-radius:34px;
-            padding:1.2rem 3rem;
-            font-family:'Marker Felt', cursive;
-            font-size:2rem;
-            cursor:pointer;
-            box-shadow:0 6px 12px rgba(0,0,0,0.2);
-          "
-        >
-          See my progress
-        </button>
-
-        <div style="
-          margin-top:2rem;
-          font-size:1.6rem;
-          color:#0D1843;
-        ">
-          Stars earned this week:
-        </div>
-
-        <div style="
-          font-size:4rem;
-          color:#D3AC13;
-          margin-top:0.75rem;
-        ">
-          ★
-        </div>
-      </div>
-
+<div class="screen" id="bookFinishScreen">
+  <div class="container">
+    <div class="card" style="text-align:center">
+      <div style="font-size:4rem;margin-bottom:0.5rem">🎉</div>
+      <h2 id="finishTitle" style="margin-bottom:0.5rem"></h2>
+      <p class="subtitle">You finished the whole book!</p>
+      <div class="reader-score-row" id="finishScores" style="justify-content:center;margin:1.5rem 0"></div>
+      <div id="finishMessage" style="font-size:1rem;font-weight:700;color:#2e7d32;margin-bottom:1.5rem"></div>
+      <button class="btn-primary" onclick="openBookwormAfterReading()" style="margin-bottom:0.75rem">📚 Chat with Bookworm</button>
+      <button class="btn-secondary" onclick="goToLibrary()" style="width:100%">Choose another book</button>
     </div>
   </div>
 </div>
@@ -751,42 +441,12 @@
   </div>
 </div>
 
-<div class="screen" id="teacherAuthScreen" style="position:relative;background:#4B7FD1;">
-  
-  <!-- KEEPING STICKY NOTE -->
-  <img src="assets/teacherTest.png" alt=""
-    style="position:absolute;right:80px;top:50%;transform:translateY(-50%);
-    width:280px;opacity:0.9;pointer-events:none;z-index:0" />
-
-  <div style="
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    position:relative;
-    z-index:1;
-    padding:2rem;
-  ">
-
-    <div style="
-      width:650px;
-      background:#E9ECF7;
-      border-radius:32px;
-      padding:3rem 3.5rem;
-      box-shadow:0 8px 18px rgba(0,0,0,0.15);
-    ">
-
-      <h2 style="
-        text-align:center;
-        font-family:'Marker Felt', cursive;
-        font-size:4rem;
-        color:#0D1843;
-        margin-bottom:2.5rem;
-        line-height:1;
-      ">
-        Teacher Sign-in
-      </h2>
-
+<div class="screen" id="teacherAuthScreen" style="position:relative">
+  <img src="assets/teacherTest.png" alt="" style="position:absolute;right:80px;top:50%;transform:translateY(-50%);width:280px;opacity:0.9;pointer-events:none;z-index:0" />
+  <div class="container" style="position:relative;z-index:1">
+    <div class="card">
+      <h2>Teacher Sign In</h2>
+      <p class="subtitle">Sign in to view your students reading progress and manage your classes.</p>
       <div class="error-msg" id="authError"></div>
       <div class="success-msg" id="authSuccess"></div>
 
@@ -914,20 +574,38 @@
   </div>
 </div>
 
-<div class="screen" id="teacherDashboardScreen" style="background:#4B7FD1;min-height:100vh;width:100%;padding:1rem 0 3rem 0;">
-  <div class="teacher-container" style="max-width:1100px;margin:0 auto;font-family:'Marker Felt', cursive;color:#0D1843;">
-
-    <div style="background:#E9ECF7;border-radius:24px;padding:1rem 1.25rem;margin-bottom:1rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
-        <div style="background:#0D1843;color:white;border-radius:14px;padding:0.8rem 1.5rem;font-size:1.5rem">
-          Class Code : <span id="dashboardClassCode">----</span>
-        </div>
+<div class="screen" id="teacherDashboardScreen">
+  <div class="teacher-container">
+    <div class="card">
+      <div style="margin-bottom:1rem">
+        <h2>Teacher Dashboard</h2>
+        <p class="subtitle" style="margin-bottom:0">Manage your classes and track student progress.</p>
+      </div>
 
         <h2 style="font-size:2.3rem;margin:0;color:#0D1843">Teacher Dashboard</h2>
 
         <button onclick="teacherLogout()" style="background:#E9ECF7;color:#0D1843;border:3px solid #0D1843;border-radius:16px;padding:0.6rem 1rem;font-family:'Marker Felt', cursive;font-size:1.2rem;cursor:pointer">
           Sign Out
         </button>
+      <div id="createClassForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div class="form-group">
+          <label>Class name</label>
+          <input type="text" id="newClassName" placeholder="e.g. Period 2 Reading or Mrs. Johnson Grade 4" />
+        </div>
+        <div class="form-group">
+          <label>Grade level</label>
+          <select id="newClassGrade">
+            <option value="3">Grade 3</option>
+            <option value="4" selected>Grade 4</option>
+            <option value="5">Grade 5</option>
+            <option value="6">Grade 6</option>
+            <option value="7">Grade 7</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:0.6rem">
+          <button class="btn-primary" onclick="createClass()" style="flex:1">Create class</button>
+          <button class="btn-secondary" onclick="hideCreateClass()">Cancel</button>
+        </div>
       </div>
       
 
@@ -945,6 +623,12 @@
     margin-top:1.4rem;
   "></div>
 </div>
+      <div id="bookSuggestions" style="display:none;background:#f0f5ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <h3 style="font-size:0.95rem;font-weight:700;color:#1a3a5c;margin-bottom:0.75rem">📚 Suggested books for your class</h3>
+        <div id="bookSuggestionsList"></div>
+      </div>
+
+      <div id="classList"></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
@@ -956,40 +640,45 @@
           </button>
         </div>
 
-        <div id="addBookForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
-          <div class="book-search-box">
-            <span class="book-search-icon">🔍</span>
-            <input type="text" class="book-search-input" id="bookSearchInput"
-              placeholder="Search by title or author..."
-              oninput="debounceBookSearch(this.value)"
-              autocomplete="off" />
-            <div class="book-search-results" id="bookSearchResults"></div>
+      <div id="addBookForm" style="display:none;background:#f8f9ff;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div class="book-search-box">
+          <span class="book-search-icon">🔍</span>
+          <input type="text" class="book-search-input" id="bookSearchInput"
+            placeholder="Search by title or author..."
+            oninput="debounceBookSearch(this.value)"
+            autocomplete="off" />
+          <div class="book-search-results" id="bookSearchResults"></div>
+        </div>
+        <p style="font-size:0.75rem;color:#aaa;margin-top:-0.75rem;margin-bottom:1rem">Search auto-fills the fields below, or fill them in manually.</p>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="newBookTitle" placeholder="e.g. The Gift of the Magi" />
+        </div>
+        <div class="form-group">
+          <label>Author (optional)</label>
+          <input type="text" id="newBookAuthor" placeholder="e.g. O. Henry" />
+        </div>
+        <div class="form-group">
+          <label>Topic / Genre (optional)</label>
+          <input type="text" id="newBookTopic" placeholder="e.g. Nature" />
+        </div>
+        <div class="form-group">
+          <label>Source / paid library (optional)</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem">
+            <select id="newBookSourceService" style="flex:1;min-width:140px;padding:0.5rem 0.75rem;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.82rem;font-family:inherit;background:#fff;color:#1a1a1a" onchange="handleSourceServiceChange()">
+              <option value="">None / custom</option>
+              <option value="ReadWorks">ReadWorks</option>
+              <option value="NewsELA">NewsELA</option>
+              <option value="CommonLit">CommonLit</option>
+              <option value="Epic!">Epic!</option>
+              <option value="Raz-Kids">Raz-Kids</option>
+              <option value="Scholastic">Scholastic</option>
+              <option value="Project Gutenberg">Project Gutenberg</option>
+              <option value="Other">Other</option>
+            </select>
+            <input type="text" id="newBookSourceUrl" placeholder="Paste book URL (optional)" style="flex:2;min-width:180px;padding:0.5rem 0.75rem;border:1.5px solid #e0e0e0;border-radius:8px;font-size:0.82rem;font-family:inherit" />
           </div>
-
-          <div class="form-group">
-            <label>Title</label>
-            <input type="text" id="newBookTitle" placeholder="e.g. The Gift of the Magi" />
-          </div>
-
-          <div class="form-group">
-            <label>Author optional</label>
-            <input type="text" id="newBookAuthor" placeholder="e.g. O. Henry" />
-          </div>
-
-          <div class="form-group">
-            <label>Topic / Genre optional</label>
-            <input type="text" id="newBookTopic" placeholder="e.g. Nature" />
-          </div>
-
-          <div class="form-group">
-            <label>Reading passage</label>
-            <textarea id="newBookText" placeholder="Paste a reading passage here." rows="6"></textarea>
-          </div>
-
-          <div style="display:flex;gap:0.6rem">
-            <button class="btn-primary" onclick="addBook()" style="flex:1">Save to library</button>
-            <button class="btn-secondary" onclick="hideAddBookForm()">Cancel</button>
-          </div>
+          <p id="sourceServiceNote" style="font-size:0.72rem;color:#888;margin-bottom:0.5rem;display:none"></p>
         </div>
 
         <div id="libraryAdminList"></div>
@@ -1011,8 +700,12 @@
 
       <div id="createClassForm" style="display:none">
         <div class="form-group">
-          <label>Class name</label>
-          <input type="text" id="newClassName" placeholder="e.g. Period 2 Reading" />
+          <label>Reading passage</label>
+          <button id="gutenbergFetchBtn" style="display:none;width:100%;margin-bottom:0.6rem;padding:0.65rem;background:#e8f4e8;color:#2a7a4a;border:1.5px solid #a5d6a7;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;text-align:left" onclick="fetchGutenbergText()">
+            📖 Auto-fill text from Project Gutenberg (public domain classic)
+          </button>
+          <textarea id="newBookText" placeholder="Paste a reading passage here. This can be from your paid subscription (ReadWorks, Epic!, Raz-Kids, etc.) or any source — textbook, news article, classroom reader. For public domain classics, use the auto-fill button above. Long texts are split into rotating 120-word passages automatically." rows="6" style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e0e0e0;border-radius:10px;font-size:0.88rem;color:#1a1a1a;background:#fafafa;font-family:inherit;resize:vertical;outline:none"></textarea>
+          <p style="font-size:0.72rem;color:#aaa;margin-top:0.4rem">Tip: paste the full chapter or article — the app automatically rotates through 120-word chunks so students never read the same section twice.</p>
         </div>
 
         <div class="form-group">
@@ -1062,6 +755,8 @@
         <div id="comprehensionResultMsg" style="font-size:0.95rem;color:#555;font-weight:600;margin-bottom:1.25rem"></div>
         <button class="btn-primary" onclick="comprehensionDone()">Continue →</button>
       </div>
+      <div id="libraryAdminList"></div>
+      <div id="assignmentsAdmin"></div>
     </div>
   </div>
 </div>
@@ -1071,6 +766,126 @@
     <div class="card" style="padding:2rem">
 
      
+
+      <h2 style="margin-bottom:0.25rem">Privacy &amp; Data Use</h2>
+      <p style="font-size:0.82rem;color:#888;margin-bottom:1.75rem">Last updated: May 2026 · BookWorm / MichiganReads AI</p>
+
+      <div class="privacy-section">
+        <h3>Who this app is for</h3>
+        <p>BookWorm is designed for Michigan elementary school students in grades 3–7, their teachers, and their families. Because we serve children, we take data privacy seriously and comply with the <strong>Children's Online Privacy Protection Act (COPPA)</strong>, the <strong>Family Educational Rights and Privacy Act (FERPA)</strong>, and the <strong>Michigan Student Data Privacy Act</strong>.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>What we collect</h3>
+        <ul class="privacy-list">
+          <li><strong>Account information</strong> — student name, grade level, and email address used to create an account.</li>
+          <li><strong>Voice audio</strong> — when a student reads aloud, their voice is captured and sent to Microsoft Azure for pronunciation analysis. The audio is processed in real time and is not stored permanently by BookWorm.</li>
+          <li><strong>Reading scores</strong> — accuracy, fluency, and completeness scores generated from each reading session are stored so students and teachers can track progress over time.</li>
+          <li><strong>Chat messages</strong> — conversations with Bookworm (our AI reading tutor) are stored to provide continuity across sessions and help Bookworm remember a student's progress.</li>
+          <li><strong>Comprehension and confidence responses</strong> — answers to comprehension questions and how a student reported feeling about a reading session are stored as part of their learning record.</li>
+          <li><strong>Difficult words</strong> — words a student mispronounced are logged to identify patterns and guide practice over time.</li>
+        </ul>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Who receives student data</h3>
+        <p>To provide its features, BookWorm shares data with the following trusted services. No data is ever sold or used for advertising.</p>
+        <div class="privacy-vendor-grid">
+          <div class="privacy-vendor">
+            <div class="privacy-vendor-name">Microsoft Azure</div>
+            <div class="privacy-vendor-desc">Processes voice audio for pronunciation scoring and powers the Bookworm microphone. Audio is analyzed in real time and not retained.</div>
+          </div>
+          <div class="privacy-vendor">
+            <div class="privacy-vendor-name">IBM watsonx (Granite)</div>
+            <div class="privacy-vendor-desc">Receives student name, grade, reading scores, and mispronounced words to generate personalized reading feedback and teacher reports.</div>
+          </div>
+          <div class="privacy-vendor">
+            <div class="privacy-vendor-name">Google Cloud TTS</div>
+            <div class="privacy-vendor-desc">Converts Bookworm's text responses into spoken audio. Receives only the text of Bookworm's messages, not student data.</div>
+          </div>
+          <div class="privacy-vendor">
+            <div class="privacy-vendor-name">Groq (Llama 3.1)</div>
+            <div class="privacy-vendor-desc">Powers Bookworm conversation summaries. Receives anonymized conversation excerpts to generate brief session notes.</div>
+          </div>
+          <div class="privacy-vendor">
+            <div class="privacy-vendor-name">Supabase</div>
+            <div class="privacy-vendor-desc">Stores all account data, reading sessions, and Bookworm conversation summaries securely in a US-based database.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="privacy-section">
+        <h3>How long data is kept</h3>
+        <p>Student data is retained for the duration of the school year and deleted upon request. Teachers can request deletion of any student's data at any time. We do not keep data longer than necessary.</p>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Your rights</h3>
+        <ul class="privacy-list">
+          <li><strong>Parents</strong> have the right under COPPA and FERPA to review, correct, or delete their child's data.</li>
+          <li><strong>Teachers</strong> can remove a student from their class at any time, which stops new data collection for that student.</li>
+          <li><strong>Students</strong> can ask their teacher or a parent to request data deletion on their behalf.</li>
+        </ul>
+      </div>
+
+      <div class="privacy-section">
+        <h3>What we do not do</h3>
+        <ul class="privacy-list">
+          <li>We do not sell student data to any third party.</li>
+          <li>We do not use student data to serve advertising.</li>
+          <li>We do not share data with any party not listed above.</li>
+          <li>We do not use student data to train AI models without explicit consent.</li>
+        </ul>
+      </div>
+
+      <div class="privacy-section" style="background:#f0f5ff;border-radius:12px;padding:1.25rem;margin-top:1.75rem;border-left:4px solid #1a3a5c">
+        <h3 style="margin-top:0">Contact us</h3>
+        <p style="margin-bottom:0">To request data deletion, ask a privacy question, or report a concern, email us at <strong>privacy@michiganreads.ai</strong>. We will respond within 5 business days.</p>
+      </div>
+
+      <button class="btn-primary" onclick="showScreen('roleScreen')" style="margin-top:1.75rem">Done</button>
+
+    <div class="card" id="studentsDashboard" style="display:none">
+      <div id="dashboardHeader"></div>
+      <div id="liveSection"></div>
+      <div id="analyticsOverview"></div>
+      <div id="analyticsWords"></div>
+      <div class="teacher-tabs" id="teacherTabs"></div>
+      <div id="studentsList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="comprehensionScreen">
+  <div class="container">
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1.25rem">
+        <div style="font-size:2.5rem;margin-bottom:0.4rem">📝</div>
+        <h2>Check Your Understanding</h2>
+        <div id="comprehensionBookTitle" style="font-size:0.88rem;color:#888;font-weight:600;margin-top:0.2rem"></div>
+      </div>
+
+      <div id="comprehensionLoading" style="text-align:center;padding:2rem">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <p style="margin-top:0.75rem;color:#666;font-size:0.9rem">Writing questions about your passage...</p>
+      </div>
+
+      <div id="comprehensionQBody" style="display:none"></div>
+
+      <div id="comprehensionResults" style="display:none;margin-top:1.5rem;padding:1.25rem;background:#f0f7ff;border-radius:14px;text-align:center">
+        <div id="comprehensionResultScore" style="font-size:2rem;font-weight:800;margin-bottom:0.4rem"></div>
+        <div id="comprehensionResultMsg" style="font-size:0.95rem;color:#555;font-weight:600;margin-bottom:1.25rem"></div>
+        <button class="btn-primary" onclick="comprehensionDone()">Continue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="privacyScreen">
+  <div class="container" style="max-width:680px">
+    <div class="card" style="padding:2rem">
+
+      <button class="btn-secondary" onclick="showScreen('roleScreen')" style="width:auto;margin-bottom:1.5rem">← Back</button>
 
       <h2 style="margin-bottom:0.25rem">Privacy &amp; Data Use</h2>
       <p style="font-size:0.82rem;color:#888;margin-bottom:1.75rem">Last updated: May 2026 · BookWorm / MichiganReads AI</p>
@@ -1171,3 +986,5 @@
 <script src="js/teacher.js"></script>
 </body>
 </html>
+
+

@@ -176,7 +176,7 @@ ${sessionLines}
 The student just asked: "What are my reading scores so far?"
 Respond warmly in 3-4 sentences using only the exact numbers above. Highlight their best score and average. Encourage them. Do not mention any book, score, or streak not listed above.`;
 
-    const res = await fetch('http://localhost:5000/api/bookworm', {
+    const res = await fetch('https://fourg-44vh.onrender.com/api/bookworm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -223,6 +223,35 @@ async function handleStudentMessage(text) {
     document.getElementById('bookwormTyping')?.remove();
   }
 
+function showConfidenceButtons() {
+  bookwormConfidenceAsked = true;
+  const messages = document.getElementById('bookwormMessages');
+  const el = document.createElement('div');
+  el.className = 'bookworm-bubble worm';
+  el.id = 'confidenceBubble';
+  el.innerHTML = `How did reading feel today?
+    <div class="confidence-btns">
+      <button onclick="handleConfidenceChoice('easy')">😊 Easy</button>
+      <button onclick="handleConfidenceChoice('medium')">😐 Medium</button>
+      <button onclick="handleConfidenceChoice('hard')">😓 Hard</button>
+    </div>`;
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function handleConfidenceChoice(level) {
+  bookwormConfidenceLevel = level;
+  document.getElementById('confidenceBubble')?.remove();
+  const label = level === 'easy' ? '😊 Easy' : level === 'medium' ? '😐 Medium' : '😓 Hard';
+  addBookwormBubble(label, 'student');
+  bookwormHistory.push({ role: 'user', content: `Reading felt ${level} today.` });
+
+  const replies = {
+    easy: `That's awesome — feeling confident means you're growing as a reader! 📚 What part of the passage did you like best?`,
+    medium: `Medium is totally fine — that means you're being challenged in just the right way! What was the trickiest part?`,
+    hard: `Thank you for being honest — hard readings are how we get stronger! What made it feel difficult?`
+  };
+  const reply = replies[level];
   addBookwormBubble(reply, 'worm');
   bookwormHistory.push({ role: 'assistant', content: reply });
   bookwormSpeak(reply);
@@ -319,6 +348,8 @@ async function callIBM() {
     ? `\nRECURRING STRUGGLE WORDS — this student has mispronounced these across multiple sessions: ${bookwormRecurringWords.join(', ')}. Bring one up early and naturally: "Hey, last time you had trouble with '____' — want to try it again today?"`
     : '';
 
+  const assignedBookList = (libraryBooks || []).map(b => `"${b.title}"`).join(', ') || 'none assigned yet';
+
   const system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students.${currentLanguage === 'es' ? ' Respond only in Spanish. Use simple, friendly Spanish for an elementary student.' : ''}
 Student name: ${bookwormContext.studentName}, Grade ${bookwormContext.grade}
 ${scoreInfo}
@@ -333,17 +364,15 @@ Rules:
 - Use their name occasionally
 - Never say you cannot see the student's score — you always have it
 - Never suggest a book that is not in the assigned books list above`;
-  }
 
-  const { data, error } = await sb.functions.invoke('ibm-chat', {
-    body: {
-      messages: [{ role: 'system', content: system }, ...bookwormHistory],
-      max_tokens: 120,
-      project_id: IBM_PROJECT_ID
-    }
+  const res = await fetch('https://fourg-44vh.onrender.com/api/bookworm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, messages: bookwormHistory, max_tokens: 120 })
   });
-  if (error || !data?.content) throw new Error(error || 'No content');
-  return data.content;
+  const data = await res.json();
+  if (!data.reply) throw new Error('No reply');
+  return data.reply;
 }
 
 // ── Cross-session memory ──────────────────────────────────────────────────────
@@ -533,3 +562,5 @@ function stopBookwormListening() {
   if (btn) btn.classList.remove('listening');
   if (input) input.placeholder = 'Type or tap 🎙️ to speak...';
 }
+
+

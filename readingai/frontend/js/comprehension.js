@@ -21,40 +21,33 @@ async function startComprehensionQuiz(passage, title, onComplete) {
   document.getElementById('comprehensionQBody').style.display = 'block';
 }
 
-async function generateComprehensionQuestions(passage) {
-  const system = `You are a reading comprehension question writer for elementary school students (grades 3-6).
-Generate exactly 3 multiple-choice questions based strictly on what the passage says.
-Respond ONLY with valid JSON matching this schema exactly:
+async function generateComprehensionQuestions(passage, bookGrade) {
+  const grade = bookGrade || currentStudent?.grade || 4;
+  const levelDesc = grade <= 2
+    ? 'very simple — grade 1-2, short sentences, basic who/what/where questions only'
+    : grade === 3
+    ? 'simple — grade 3, straightforward questions about characters and events'
+    : 'grade 4-5, mix of literal and simple inferential questions';
+
+  const system = `You are a reading comprehension question writer. Generate exactly 3 multiple-choice questions based ONLY on what the passage says. The questions should be ${levelDesc}.
+Respond ONLY with valid JSON matching this exact schema (no markdown, no extra text):
 {"questions":[{"question":"string","choices":["A. ...","B. ...","C. ...","D. ..."],"answer":"A"}]}
 Rules:
-- Questions must be answerable from the passage alone (who, what, where, when, why, how)
+- Every question must be answerable from the passage text alone
 - Use simple words a child can understand
 - Each question has exactly 4 choices labeled A, B, C, D
-- One and only one correct answer per question
-- Wrong choices are plausible but clearly wrong after reading the passage`;
+- One and only one correct answer per question`;
 
-  const userMsg = `Write 3 comprehension questions for this reading passage:\n\n"${passage.substring(0, 900)}"`;
+  const userMsg = `Write 3 comprehension questions for this passage:\n\n"${passage.substring(0, 900)}"`;
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch('https://fourg-44vh.onrender.com/api/bookworm', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userMsg }
-        ],
-        max_tokens: 700,
-        temperature: 0.3,
-        response_format: { type: 'json_object' }
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system, messages: [{ role: 'user', content: userMsg }], max_tokens: 700 })
     });
     const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || '{}';
+    const content = (data.reply || '').trim().replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(content);
     if (Array.isArray(parsed.questions) && parsed.questions.length > 0) {
       return parsed.questions.slice(0, 3);
@@ -179,3 +172,5 @@ function startPassageComprehension() {
   const title = document.getElementById('passageTitle').innerText;
   startComprehensionQuiz(passage, title, () => showScreen('readingScreen'));
 }
+
+
