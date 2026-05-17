@@ -124,11 +124,43 @@ function copyCode(code) {
 
 async function openClassDashboard(code, name) {
   try {
-    const { data } = await sb.from('student_sessions')
-      .select('*')
-      .order('created_at', { ascending: false });
-    allSessions = data || [];
-  } catch {
+    const classCodes = teacherClasses.map(c => c.class_code);
+    const { data: profiles } = await sb.from('student_profiles')
+      .select('*').in('class_code', classCodes);
+
+    if (profiles && profiles.length > 0) {
+      const studentIds = profiles.map(p => p.user_id);
+      const profileMap = {};
+      profiles.forEach(p => { profileMap[p.user_id] = p; });
+
+      const { data: sessions } = await sb.from('reading_sessions')
+        .select('*').in('student_id', studentIds)
+        .order('created_at', { ascending: false });
+
+      allSessions = (sessions || []).map(s => {
+        const profile = profileMap[s.student_id] || {};
+        const words = Array.isArray(s.difficult_words)
+          ? s.difficult_words.map(w => typeof w === 'string' ? { word: w, score: 0 } : w)
+          : [];
+        return {
+          student_name: profile.name || 'Unknown',
+          grade: profile.grade || '',
+          class_code: profile.class_code || '',
+          passage_title: s.book_title || '',
+          accuracy: s.accuracy_score || 0,
+          fluency: s.fluency_score || 0,
+          completeness: s.completeness_score || 0,
+          overall: s.overall_score || 0,
+          difficult_words: words,
+          feedback: s.feedback || '',
+          created_at: s.created_at
+        };
+      });
+    } else {
+      allSessions = [];
+    }
+  } catch (err) {
+    console.error('Dashboard load error:', err);
     allSessions = [];
   }
 
