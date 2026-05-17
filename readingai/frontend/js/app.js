@@ -14,6 +14,8 @@ function showScreen(id) {
 
   if (currentScreen === nextScreen) return;
 
+  currentScreenId = id;
+
   if (currentScreen) {
     currentScreen.style.opacity = '0';
     currentScreen.style.transform = 'translateY(-12px)';
