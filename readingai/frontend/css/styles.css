@@ -1255,6 +1255,27 @@ body.role-active header {
   align-self: flex-end;
   border-bottom-right-radius: 4px;
 }
+.bookworm-quick-btns {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem 0;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.bookworm-quick-btns button {
+  background: #f0f5ff;
+  border: 1.5px solid #c8d8f0;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  color: #1a3a5c;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.bookworm-quick-btns button:hover { background: #dce8ff; }
+
 .bookworm-input-row {
   display: flex;
   align-items: center;
@@ -1335,6 +1356,59 @@ body.role-active header {
 }
 #wormFab:hover { background: #1b5e20; transform: scale(1.08); }
 #wormFab img { width: 100%; height: 100%; object-fit: contain; }
+
+#wormSpeechBubble {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 100px;
+  max-width: 240px;
+  background: white;
+  border: 2px solid #2e7d32;
+  border-radius: 16px 16px 4px 16px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 9998;
+  cursor: pointer;
+  animation: bubblePop 0.25s ease;
+}
+#wormSpeechBubble::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  right: -10px;
+  border-width: 8px 0 8px 10px;
+  border-style: solid;
+  border-color: transparent transparent transparent #2e7d32;
+}
+#wormSpeechBubble::before {
+  content: '';
+  position: absolute;
+  bottom: 16px;
+  right: -7px;
+  border-width: 6px 0 6px 8px;
+  border-style: solid;
+  border-color: transparent transparent transparent white;
+  z-index: 1;
+}
+#wormSpeechBubble p {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+  line-height: 1.45;
+  font-family: inherit;
+}
+.worm-bubble-dismiss {
+  font-size: 0.72rem;
+  color: #2e7d32;
+  font-weight: 700;
+  display: block;
+  text-align: right;
+}
+@keyframes bubblePop {
+  from { opacity: 0; transform: scale(0.85) translateX(10px); }
+  to   { opacity: 1; transform: scale(1) translateX(0); }
+}
 
 /* Progress screen */
 .progress-loading { color: #aaa; font-size: 0.88rem; padding: 1rem 0; }
@@ -2699,20 +2773,24 @@ body.role-active header {
 
 /* ── Privacy page ──────────────────────────────────────────────────────────── */
 .privacy-link-row {
-  margin-top: 1.5rem;
+  position: fixed;
+  bottom: 1.5rem;
+  left: 0;
+  right: 0;
   text-align: center;
 }
 .privacy-link {
-  background: none;
-  border: none;
+  background: white;
+  border: 1.5px solid #dde3ec;
+  border-radius: 20px;
   font-size: 0.8rem;
-  color: #aaa;
+  color: #888;
   cursor: pointer;
   font-family: inherit;
-  padding: 0.25rem 0.5rem;
-  transition: color 0.2s;
+  padding: 0.4rem 1rem;
+  transition: color 0.2s, border-color 0.2s;
 }
-.privacy-link:hover { color: #1a3a5c; }
+.privacy-link:hover { color: #1a3a5c; border-color: #1a3a5c; }
 
 .privacy-section {
   margin-bottom: 1.5rem;

@@ -237,10 +237,10 @@ async function searchBooks(query) {
   resultsEl.classList.add('open');
   try {
     const res = await fetch(
-      `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_i,first_publish_year`
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=en&printType=books&maxResults=8&key=${GOOGLE_BOOKS_KEY}`
     );
     const data = await res.json();
-    renderBookSearchResults(data.docs || []);
+    renderBookSearchResults(data.items || []);
   } catch {
     resultsEl.innerHTML = '<div class="book-search-status">Search failed — fill in the fields manually.</div>';
   }
@@ -253,16 +253,17 @@ function renderBookSearchResults(books) {
     return;
   }
   resultsEl.innerHTML = books.map((b, i) => {
-    const thumbUrl = b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-S.jpg` : null;
-    const author = b.author_name ? b.author_name[0] : '';
-    const year = b.first_publish_year || '';
+    const info = b.volumeInfo || {};
+    const thumbUrl = info.imageLinks?.thumbnail || null;
+    const author = info.authors ? info.authors[0] : '';
+    const year = info.publishedDate ? info.publishedDate.substring(0, 4) : '';
     return `
       <div class="book-search-result" onclick="selectBookResult(${i})">
         ${thumbUrl
-          ? `<img class="book-search-cover" src="${thumbUrl}" alt="${b.title}">`
+          ? `<img class="book-search-cover" src="${thumbUrl}" alt="${info.title}">`
           : `<div class="book-search-cover-placeholder"></div>`}
         <div>
-          <div class="book-search-result-title">${b.title}</div>
+          <div class="book-search-result-title">${info.title || ''}</div>
           ${author ? `<div class="book-search-result-author">${author}</div>` : ''}
           ${year ? `<div class="book-search-result-year">${year}</div>` : ''}
         </div>
@@ -274,12 +275,94 @@ function renderBookSearchResults(books) {
 function selectBookResult(i) {
   const resultsEl = document.getElementById('bookSearchResults');
   const b = resultsEl._bookData[i];
-  document.getElementById('newBookTitle').value = b.title || '';
-  document.getElementById('newBookAuthor').value = b.author_name ? b.author_name[0] : '';
-  document.getElementById('bookSearchInput').value = b.title || '';
-  selectedBookCoverUrl = b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg` : '';
+  const info = b.volumeInfo || {};
+
+  document.getElementById('newBookTitle').value = info.title || '';
+  document.getElementById('newBookAuthor').value = info.authors ? info.authors[0] : '';
+  document.getElementById('bookSearchInput').value = info.title || '';
+
+  const rawCategory = info.categories ? info.categories[0] : '';
+  document.getElementById('newBookTopic').value = rawCategory.split('/')[0].trim();
+
+  document.getElementById('newBookText').value = '';
+  selectedBookCoverUrl = info.imageLinks?.thumbnail || '';
   resultsEl.classList.remove('open');
-  lookupGutenberg(b.title || '');
+  lookupGutenbergThenGenerate(info);
+}
+
+async function lookupGutenbergThenGenerate(info) {
+  gutenbergTextUrl = null;
+  const btn = document.getElementById('gutenbergFetchBtn');
+  const textarea = document.getElementById('newBookText');
+
+  btn.style.display = 'block';
+  btn.disabled = true;
+  btn.textContent = 'Checking for book text...';
+  btn.style.background = '#f0f0f0';
+  btn.style.color = '#888';
+  btn.style.borderColor = '#ddd';
+
+  try {
+    const res = await fetch(`https://gutendex.com/books/?search=${encodeURIComponent(info.title || '')}`);
+    const data = await res.json();
+    const expectedAuthor = (info.authors?.[0] || '').toLowerCase();
+    const expectedLastName = expectedAuthor.split(' ').pop();
+    if (data.results && data.results.length) {
+      for (const book of data.results) {
+        const gutenbergAuthors = (book.authors || []).map(a => (a.name || '').toLowerCase()).join(' ');
+        if (expectedLastName && !gutenbergAuthors.includes(expectedLastName)) continue;
+        const formats = book.formats || {};
+        const textUrl = formats['text/plain; charset=utf-8'] ||
+          formats['text/plain'] ||
+          Object.entries(formats).find(([k]) => k.startsWith('text/plain'))?.[1];
+        if (textUrl) {
+          gutenbergTextUrl = textUrl;
+          btn.textContent = '📖 Auto-fill text from Project Gutenberg (public domain)';
+          btn.disabled = false;
+          btn.style.background = '#e8f4e8';
+          btn.style.color = '#2a7a4a';
+          btn.style.borderColor = '#a5d6a7';
+          return;
+        }
+      }
+    }
+  } catch { }
+
+  btn.style.display = 'none';
+  textarea.value = 'Generating reading passage with IBM Granite...';
+  textarea.disabled = true;
+
+  try {
+    const res = await fetch('http://localhost:5000/api/generate-passage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: info.title || '',
+        author: info.authors?.[0] || 'the author',
+        description: (info.description || '').substring(0, 300)
+      })
+    });
+    const resData = await res.json();
+    const generated = resData.passage || '';
+    if (generated) {
+      textarea.value = generated;
+      textarea.disabled = false;
+      const existing = document.getElementById('aiPassageNote');
+      if (!existing) {
+        const note = document.createElement('p');
+        note.id = 'aiPassageNote';
+        note.style.cssText = 'font-size:0.75rem;color:#856404;background:#fff3cd;border-radius:6px;padding:0.4rem 0.75rem;margin-top:0.4rem';
+        note.textContent = 'AI-generated passage — review and edit before assigning to students.';
+        textarea.parentNode.insertBefore(note, textarea.nextSibling);
+      }
+    } else {
+      throw new Error('empty');
+    }
+  } catch {
+    textarea.value = '';
+    textarea.disabled = false;
+    textarea.placeholder = 'Could not generate passage — paste one here manually.';
+  }
 }
 
 async function lookupGutenberg(title) {
@@ -397,6 +480,7 @@ function hideAddBookForm() {
   document.getElementById('bookSearchResults').classList.remove('open');
   document.getElementById('gutenbergFetchBtn').style.display = 'none';
   document.getElementById('gutenbergLink')?.remove();
+  document.getElementById('aiPassageNote')?.remove();
   selectedBookCoverUrl = '';
   gutenbergTextUrl = null;
 }

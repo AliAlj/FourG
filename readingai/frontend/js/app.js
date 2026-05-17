@@ -33,13 +33,20 @@ function showScreen(id) {
 
   document.body.classList.toggle('splash-active', id === 'loadingScreen');
   document.body.classList.toggle('role-active', id === 'roleScreen');
+  currentScreenId = id;
+  if (id !== 'roleScreen') {
+    const bubble = document.getElementById('wormSpeechBubble');
+    if (bubble) bubble.style.display = 'none';
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  // Restore saved language preference
   setLanguage(currentLanguage);
   setTimeout(() => {
-    if (!sessionRestored) showScreen('roleScreen');
+    if (!sessionRestored) {
+      showScreen('roleScreen');
+      setTimeout(openBookwormIntro, 600);
+    }
   }, 2200);
 });
 
