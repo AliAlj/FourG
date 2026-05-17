@@ -8,6 +8,23 @@ let bookwormConfidenceAsked = false;
 let bookwormConfidenceLevel = null;
 let bookwormRecurringWords = [];
 
+function openBookwormIntro() {
+  const bubble = document.getElementById('wormSpeechBubble');
+  const text = document.getElementById('wormSpeechText');
+  if (!bubble || !text) return;
+
+  text.textContent = "Hey! I'm Bookworm, your AI reading buddy powered by IBM Granite 🐛 I help students read out loud, understand stories, and learn new words — and help teachers track progress. Tap me to chat!";
+  bubble.style.display = 'block';
+
+  bookwormSpeak(text.textContent);
+}
+
+function dismissWormBubble() {
+  const bubble = document.getElementById('wormSpeechBubble');
+  if (bubble) bubble.style.display = 'none';
+  openBookwormHelp();
+}
+
 function openBookworm(context) {
   const resumingSameBook = bookwormContext?.title === context.title && bookwormHistory.length > 0;
 
@@ -58,13 +75,26 @@ function openBookwormFromLibrary(idx) {
 }
 
 function openBookwormHelp() {
-  bookwormContext = { title: null, passage: null, score: null, difficultWords: [], studentName: currentStudent?.name || 'there', grade: currentStudent?.grade || '' };
+  if (currentBook && currentScreenId === 'readingScreen') {
+    openBookworm({
+      title: currentBook.title,
+      passage: currentBook.text || '',
+      score: null,
+      difficultWords: [],
+      studentName: currentStudent?.name || 'there',
+      grade: currentStudent?.grade || ''
+    });
+    return;
+  }
+
+  bookwormContext = null;
   bookwormHistory = [];
   bookwormChallengeWords = [];
   bookwormConfidenceAsked = false;
   bookwormConfidenceLevel = null;
   bookwormRecurringWords = [];
   document.getElementById('bookwormMessages').innerHTML = '';
+  document.getElementById('bookwormQuickBtns').style.display = 'flex';
   document.getElementById('bookwormPanel').classList.add('open');
   const greeting = "Hi! I'm BookWorm, your reading helper. How can I help you today?";
   addBookwormBubble(greeting, 'worm');
@@ -90,11 +120,90 @@ function addBookwormBubble(text, role) {
   return el;
 }
 
+async function bookwormQuickAsk(question) {
+  document.getElementById('bookwormQuickBtns').style.display = 'none';
+
+  if (question.includes('scores')) {
+    await handleStudentScoreQuestion();
+    return;
+  }
+
+  await handleStudentMessage(question);
+}
+
+async function handleStudentScoreQuestion() {
+  if (!currentStudent?.userId) {
+    await handleStudentMessage('What are my reading scores so far?');
+    return;
+  }
+
+  addBookwormBubble('What are my reading scores so far?', 'student');
+  const typingEl = addBookwormBubble('Bookworm is thinking...', 'typing');
+  typingEl.id = 'bookwormTyping';
+
+  try {
+    const { data: sessions } = await sb.from('reading_sessions')
+      .select('book_title, overall_score, accuracy_score, fluency_score, created_at')
+      .eq('student_id', currentStudent.userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    document.getElementById('bookwormTyping')?.remove();
+
+    if (!sessions || sessions.length === 0) {
+      const reply = `You haven't recorded any reading sessions yet, ${currentStudent.name}! Tap a book in your library and start reading to get your first score. 📚`;
+      addBookwormBubble(reply, 'worm');
+      bookwormHistory.push({ role: 'assistant', content: reply });
+      bookwormSpeak(reply);
+      return;
+    }
+
+    const avg = Math.round(sessions.reduce((s, r) => s + (r.overall_score || 0), 0) / sessions.length);
+    const best = Math.max(...sessions.map(r => r.overall_score || 0));
+    const sessionLines = sessions.map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `${date}: "${r.book_title}" — ${r.overall_score}%`;
+    }).join('\n');
+
+    const factPrompt = `VERIFIED DATA FROM DATABASE — use ONLY these exact numbers, do not make up any other figures:
+Student: ${currentStudent.name}, Grade ${currentStudent.grade}
+Total sessions: ${sessions.length}
+Average score: ${avg}%
+Best score: ${best}%
+Recent sessions (newest first):
+${sessionLines}
+
+The student just asked: "What are my reading scores so far?"
+Respond warmly in 3-4 sentences using only the exact numbers above. Highlight their best score and average. Encourage them. Do not mention any book, score, or streak not listed above.`;
+
+    const res = await fetch('http://localhost:5000/api/bookworm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: factPrompt,
+        messages: [],
+        max_tokens: 150
+      })
+    });
+    const data = await res.json();
+    const reply = data.reply || `You've read ${sessions.length} session${sessions.length > 1 ? 's' : ''} with an average of ${avg}% and a best score of ${best}%, ${currentStudent.name}! Keep it up! 🌟`;
+
+    addBookwormBubble(reply, 'worm');
+    bookwormHistory.push({ role: 'user', content: 'What are my reading scores so far?' });
+    bookwormHistory.push({ role: 'assistant', content: reply });
+    bookwormSpeak(reply);
+  } catch {
+    document.getElementById('bookwormTyping')?.remove();
+    await handleStudentMessage('What are my reading scores so far?');
+  }
+}
+
 async function bookwormSend() {
   const input = document.getElementById('bookwormInput');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
+  document.getElementById('bookwormQuickBtns').style.display = 'none';
   await handleStudentMessage(text);
 }
 
@@ -122,6 +231,9 @@ async function handleStudentMessage(text) {
   const studentTurns = bookwormHistory.filter(m => m.role === 'user').length;
   if (!bookwormConfidenceAsked && bookwormContext?.score !== null && studentTurns === 1) {
     setTimeout(showConfidenceButtons, 600);
+  }
+  if (studentTurns === 1 && bookwormRecurringWords.length > 0) {
+    setTimeout(() => showStruggleWordDrill(bookwormRecurringWords), 1200);
   }
 }
 
@@ -209,23 +321,19 @@ async function callIBM() {
 
   const system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students.${currentLanguage === 'es' ? ' Respond only in Spanish. Use simple, friendly Spanish for an elementary student.' : ''}
 Student name: ${bookwormContext.studentName}, Grade ${bookwormContext.grade}
-Book/passage they read: "${bookwormContext.title}"
-Opening of the passage: "${(bookwormContext.passage || '').substring(0, 250)}"
 ${scoreInfo}
-Words they struggled to pronounce today: ${difficultList}${memoryBlock}${challengeBlock}${recurringBlock}
+Words they struggled to pronounce today: ${difficultList}
+The student's assigned books (ONLY suggest these if recommending another book): ${assignedBookList}${memoryBlock}${challengeBlock}${recurringBlock}
 
-Your rules:
-- Keep every reply to 2-3 short sentences max — kids lose focus quickly
+Rules:
+- Keep every reply to 2-3 short sentences max
 - Use simple, friendly, grade-appropriate language
 - Ask only one question at a time
-- Focus on comprehension: what happened, why, how it connects to their life
-- Reference the student's score naturally when relevant (e.g. "You scored 84% — your fluency is really improving!")
-- If they ask about a word's meaning, explain it simply with an example
-- If they mention a word they found hard to say, give a one-sentence tip (e.g. "Say it in parts: com-mu-ni-ty")
-- Be enthusiastic and positive — never say anything discouraging
-- Use their name occasionally to keep it personal
-- Sound like a fun friend who loves books, not a teacher giving a test
-- Never say you cannot see or access the student's score — you always have it`;
+- Be enthusiastic and positive — never discouraging
+- Use their name occasionally
+- Never say you cannot see the student's score — you always have it
+- Never suggest a book that is not in the assigned books list above`;
+  }
 
   const { data, error } = await sb.functions.invoke('ibm-chat', {
     body: {
@@ -275,9 +383,7 @@ async function loadBookwormMemory() {
         .slice(0, 3)
         .map(([word]) => word);
 
-      if (bookwormRecurringWords.length > 0) {
-        showStruggleWordDrill(bookwormRecurringWords);
-      }
+      // Struggle word drill is shown after first student message, not on open
 
       const readingLines = readings.filter(r => r.overall_score != null && !isNaN(r.overall_score)).map(r => {
         const daysAgo = Math.round((Date.now() - new Date(r.created_at)) / 86400000);

@@ -29,6 +29,11 @@
     <button onclick="closeBookworm()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;color:white;border-radius:8px;padding:0.3rem 0.75rem;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:600">Close</button>
   </div>
   <div class="bookworm-messages" id="bookwormMessages"></div>
+  <div class="bookworm-quick-btns" id="bookwormQuickBtns">
+    <button onclick="bookwormQuickAsk('What are my reading scores so far?')">📊 My scores</button>
+    <button onclick="bookwormQuickAsk('What words have I been struggling with?')">📝 Tricky words</button>
+    <button onclick="bookwormQuickAsk('How can I get better at reading?')">💡 Tips</button>
+  </div>
   <div class="bookworm-input-row">
     <input type="text" class="bookworm-input" id="bookwormInput" placeholder="Type or tap 🎙️ to speak..." onkeydown="if(event.key==='Enter')bookwormSend()" />
     <button class="bookworm-mic-btn" id="bookwormMicBtn" onclick="toggleBookwormMic()">🎙️</button>
@@ -39,6 +44,11 @@
 <button id="wormFab" onclick="openBookwormHelp()" title="Chat with BookWorm AI">
   <img src="assets/wormAi.png" alt="BookWorm AI" />
 </button>
+
+<div id="wormSpeechBubble" onclick="dismissWormBubble()">
+  <p id="wormSpeechText"></p>
+  <span class="worm-bubble-dismiss">Tap to chat →</span>
+</div>
 
 <div class="word-detail-modal" id="wordModal">
   <div class="word-detail-card">

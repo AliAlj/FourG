@@ -11,6 +11,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
 let sessionRestored = false;
+let currentScreenId = 'loadingScreen';
 let currentStudent = {};
 let currentClassCode = '';
 let currentClassName = '';
@@ -32,3 +33,4 @@ let currentAssignments = [];
 const GOOGLE_AI_KEY = CONFIG.GOOGLE_AI_KEY;
 const GOOGLE_TTS_KEY = CONFIG.GOOGLE_TTS_KEY;
 const GROQ_API_KEY = CONFIG.GROQ_API_KEY;
+const GOOGLE_BOOKS_KEY = CONFIG.GOOGLE_BOOKS_KEY;
