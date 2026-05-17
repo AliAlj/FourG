@@ -58,16 +58,22 @@ async function createClass() {
 function showBookSuggestions(grade, classCode) {
   const box = document.getElementById('bookSuggestions');
   const list = document.getElementById('bookSuggestionsList');
-  const matches = passages.filter(p => p.grade === grade);
+  const matches = [
+    ...illustratedBooks.filter(b => b.grade === grade),
+    ...passages.filter(p => p.grade === grade)
+  ];
   if (!matches.length) { box.style.display = 'none'; return; }
-  list.innerHTML = matches.map(p => `
+  list.innerHTML = matches.map(p => {
+    const tag = p.type === 'illustrated' ? ' · 🖼️ Illustrated' : '';
+    return `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.75rem;background:white;border-radius:8px;margin-bottom:0.5rem;gap:1rem">
       <div>
         <div style="font-weight:700;font-size:0.88rem;color:#1a3a5c">${p.title}</div>
-        <div style="font-size:0.75rem;color:#888">Grade ${p.grade} · ${p.topic}</div>
+        <div style="font-size:0.75rem;color:#888">Grade ${p.grade} · ${p.topic}${tag}</div>
       </div>
       <button onclick="quickAssign('${p.title.replace(/'/g,"\\'")}','${classCode}')" style="padding:0.35rem 0.8rem;background:#2e7d32;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">📌 Assign</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   box.style.display = 'block';
 }
 
@@ -117,10 +123,14 @@ function copyCode(code) {
 }
 
 async function openClassDashboard(code, name) {
-  const { data } = await sb.from('student_sessions')
-    .select('*')
-    .order('created_at', { ascending: false });
-  allSessions = data || [];
+  try {
+    const { data } = await sb.from('student_sessions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    allSessions = data || [];
+  } catch {
+    allSessions = [];
+  }
 
   document.getElementById('studentsDashboard').style.display = 'block';
   document.getElementById('dashboardHeader').innerHTML = `
@@ -223,3 +233,5 @@ function openStudentDetail(session) {
 }
 
 function closeStudentModal() { document.getElementById('studentModal').classList.remove('open'); }
+
+
