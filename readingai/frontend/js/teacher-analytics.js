@@ -474,13 +474,22 @@ function renderAssignmentsAdmin(assignments, profiles, sessions) {
       }).join('')
     : '<p style="color:#aaa;font-size:0.82rem">No active assignments.</p>';
 
+  window._assignBookTitles = [
+    ...illustratedBooks.map(b => ({ title: b.title, grade: b.grade, tag: '🖼️ Illustrated' })),
+    ...passages.map(p => ({ title: p.title, grade: p.grade, tag: '📄 Passage' }))
+  ];
+
   el.innerHTML = `
     <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #eee">
       <h3 style="font-size:0.95rem;margin-bottom:1rem;color:#1a3a5c">Assign a Book</h3>
       <p style="font-size:0.78rem;color:#888;margin-bottom:0.75rem">Assigned books appear at the top of students' library with a deadline badge.</p>
       <div class="form-group">
         <label>Book title</label>
-        <input type="text" id="assignBookTitle" placeholder="e.g. Charlotte's Web" />
+        <div style="position:relative">
+          <input type="text" id="assignBookTitle" placeholder="Search or type a title…" autocomplete="off"
+            oninput="filterAssignSuggestions(this.value)" onfocus="filterAssignSuggestions(this.value)" />
+          <div id="assignBookSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;max-height:220px;overflow-y:auto"></div>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
         <div class="form-group">
@@ -518,6 +527,40 @@ async function removeAssignment(id) {
   await sb.from('assignments').delete().eq('id', id);
   await loadAssignmentsAdmin();
 }
+
+function filterAssignSuggestions(query) {
+  const dropdown = document.getElementById('assignBookSuggestions');
+  if (!dropdown) return;
+  const books = window._assignBookTitles || [];
+  const q = query.trim().toLowerCase();
+  const matches = q
+    ? books.filter(b => b.title.toLowerCase().includes(q))
+    : books;
+  if (!matches.length) { dropdown.style.display = 'none'; return; }
+  dropdown.innerHTML = matches.map(b =>
+    `<div onclick="selectAssignBook('${b.title.replace(/'/g, "\\'")}')"
+      style="padding:0.55rem 0.75rem;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:0.85rem"
+      onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background='white'">
+      <span style="font-weight:600;color:#1a3a5c">${b.title}</span>
+      <span style="color:#888;font-size:0.75rem;margin-left:0.5rem">Grade ${b.grade} · ${b.tag}</span>
+    </div>`
+  ).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectAssignBook(title) {
+  const input = document.getElementById('assignBookTitle');
+  const dropdown = document.getElementById('assignBookSuggestions');
+  if (input) input.value = title;
+  if (dropdown) dropdown.style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#assignBookTitle') && !e.target.closest('#assignBookSuggestions')) {
+    const dropdown = document.getElementById('assignBookSuggestions');
+    if (dropdown) dropdown.style.display = 'none';
+  }
+});
 
 // ── Weekly Student Summaries ──────────────────────────────────────────────────
 
