@@ -333,7 +333,7 @@ async function lookupGutenbergThenGenerate(info) {
   textarea.disabled = true;
 
   try {
-    const res = await fetch('http://localhost:5000/api/generate-passage', {
+    const res = await fetch('https://fourg-44vh.onrender.com/api/generate-passage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -41,7 +41,7 @@ Rules:
   const userMsg = `Write 3 comprehension questions for this passage:\n\n"${passage.substring(0, 900)}"`;
 
   try {
-    const res = await fetch('http://localhost:5000/api/bookworm', {
+    const res = await fetch('https://fourg-44vh.onrender.com/api/bookworm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ system, messages: [{ role: 'user', content: userMsg }], max_tokens: 700 })
