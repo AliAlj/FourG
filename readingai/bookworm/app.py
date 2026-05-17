@@ -132,30 +132,18 @@ def bookworm_chat():
         messages = data.get("messages", [])
         max_tokens = data.get("max_tokens", 120)
 
-        ibm_api_key = os.getenv("IBM_API_KEY")
-        wx_url = os.getenv("WX_URL", "https://us-south.ml.cloud.ibm.com")
-        model_id = os.getenv("MODEL_ID", "ibm/granite-3-8b-instruct")
-        project_id = os.getenv("IBM_PROJECT_ID")
-
-        token_res = requests.post(
-            "https://iam.cloud.ibm.com/identity/token",
-            data=f"grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey={ibm_api_key}",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        token = token_res.json().get("access_token")
-
-        wx_res = requests.post(
-            f"{wx_url}/ml/v1/text/chat?version=2023-05-29",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        res = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
             json={
-                "model_id": model_id,
+                "model": "llama-3.1-8b-instant",
                 "messages": [{"role": "system", "content": system}] + messages,
-                "project_id": project_id,
                 "max_tokens": max_tokens,
-                "parameters": {"temperature": 0.7},
+                "temperature": 0.7,
             },
         )
-        reply = wx_res.json()["choices"][0]["message"]["content"].strip()
+        reply = res.json()["choices"][0]["message"]["content"].strip()
         return jsonify({"reply": reply}), 200
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
@@ -169,39 +157,26 @@ def generate_passage():
         author = data.get("author", "the author")
         description = data.get("description", "")
 
-        ibm_api_key = os.getenv("IBM_API_KEY")
-        wx_url = os.getenv("WX_URL", "https://us-south.ml.cloud.ibm.com")
-        model_id = os.getenv("MODEL_ID", "ibm/granite-3-8b-instruct")
-        project_id = os.getenv("IBM_PROJECT_ID")
-
-        token_res = requests.post(
-            "https://iam.cloud.ibm.com/identity/token",
-            data=f"grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey={ibm_api_key}",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        token = token_res.json().get("access_token")
-
+        groq_api_key = os.getenv("GROQ_API_KEY")
         prompt = (
             f'Write a 2-3 sentence reading passage inspired by the book "{title}" by {author}. '
-            f"The passage should capture the themes and style of the book and be appropriate for grades 3-6. "
+            f"Capture the themes and style. Appropriate for grades 3-5. "
             f"Write only the passage — no title, no labels, no quotes. "
             f"Description: {description[:300]}"
         )
-
-        wx_res = requests.post(
-            f"{wx_url}/ml/v1/text/chat?version=2023-05-29",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        res = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
             json={
-                "model_id": model_id,
+                "model": "llama-3.1-8b-instant",
                 "messages": [
-                    {"role": "system", "content": "You write short reading passages for elementary school students. Write only the passage text — no titles, no labels, no quotes."},
+                    {"role": "system", "content": "You write short reading passages for elementary school students. Write only the passage — no titles, no labels, no quotes."},
                     {"role": "user", "content": prompt},
                 ],
-                "project_id": project_id,
                 "max_tokens": 120,
             },
         )
-        passage = wx_res.json()["choices"][0]["message"]["content"].strip()
+        passage = res.json()["choices"][0]["message"]["content"].strip()
         return jsonify({"passage": passage}), 200
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
