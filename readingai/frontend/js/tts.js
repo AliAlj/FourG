@@ -12,6 +12,12 @@ function stopAllSpeech() {
     _activeTTSAudio.src = '';
     _activeTTSAudio = null;
   }
+  const playback = document.getElementById('playbackAudio');
+  if (playback && !playback.paused) {
+    playback.pause();
+    const btn = document.getElementById('playbackBtn');
+    if (btn) btn.textContent = '▶️ Hear yourself';
+  }
   window.speechSynthesis.cancel();
   document.getElementById('speakingBar')?.classList.remove('active');
 }

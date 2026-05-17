@@ -115,16 +115,17 @@ function renderProgressChart(valid) {
   const recent = valid.slice(0, 10).reverse();
   if (recent.length < 2) return;
   const scoreColor = sc => sc >= 90 ? '#2e7d32' : sc >= 75 ? '#1a3a5c' : sc >= 60 ? '#e65100' : '#c62828';
-  const bars = recent.map(s => {
+  const bars = recent.map((s, i) => {
     const color = scoreColor(s.overall_score);
     const title = s.book_title.replace(/ \(Page \d+\)$/, '');
     const short = title.length > 10 ? title.substring(0, 10) + '…' : title;
     const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const delay = `${i * 0.07}s`;
     return `
       <div class="progress-bar-col">
         <div class="progress-bar-score" style="color:${color}">${s.overall_score}%</div>
         <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="height:${s.overall_score}%;background:${color}"></div>
+          <div class="progress-bar-fill" style="--h:${s.overall_score}%;background:${color};--delay:${delay}"></div>
         </div>
         <div class="progress-bar-label">${short}</div>
         <div class="progress-bar-date">${date}</div>
@@ -191,8 +192,8 @@ function renderProgressList(valid) {
     ${valid.slice(0, 20).map(s => {
       const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       const color = scoreColor(s.overall_score);
-      const words = (s.difficult_words || []).filter(w => typeof w === 'string' ? w : w?.word).slice(0, 5);
-      const wordStr = words.map(w => typeof w === 'string' ? w : w.word).join(', ');
+      const words = (s.difficult_words || []).map(w => typeof w === 'string' ? w : w?.word).filter(Boolean).slice(0, 5);
+      const wordStr = words.join(', ');
       const compBadge = s.comprehension_score != null
         ? `<span style="font-size:0.7rem;font-weight:700;color:#6a1a8c;background:#f3e8ff;padding:0.1rem 0.45rem;border-radius:99px">📝 ${s.comprehension_score}%</span>`
         : '';
