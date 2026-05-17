@@ -110,7 +110,7 @@ async function loadClasses() {
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center">
         <button onclick="copyCode('${cls.class_code}')" style="padding:0.35rem 0.75rem;background:#f0f5ff;border:1.5px solid #c8d8f0;border-radius:6px;font-size:0.75rem;font-weight:600;color:#1a3a5c;cursor:pointer;font-family:inherit">Copy code</button>
-        <button onclick="openClassDashboard('${cls.class_code}','${cls.class_name}')" style="padding:0.35rem 0.75rem;background:#1a3a5c;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;color:white;cursor:pointer;font-family:inherit">View students</button>
+        <button onclick="openClassDashboard('${cls.class_code}')" style="padding:0.35rem 0.75rem;background:#1a3a5c;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;color:white;cursor:pointer;font-family:inherit">View students</button>
       </div>
     </div>`).join('');
   await loadLibraryAdmin();
@@ -122,7 +122,8 @@ function copyCode(code) {
   alert(`Copied! Share code ${code} with your students.`);
 }
 
-async function openClassDashboard(code, name) {
+async function openClassDashboard(code) {
+  const name = teacherClasses.find(c => c.class_code === code)?.class_name || code;
   try {
     const classCodes = teacherClasses.map(c => c.class_code);
     const { data: profiles } = await sb.from('student_profiles')
