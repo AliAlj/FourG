@@ -124,6 +124,43 @@ def list_voices():
         return jsonify({"error": str(exc)}), 500
 
 
+@app.route("/api/bookworm", methods=["POST"])
+def bookworm_chat():
+    try:
+        data = request.get_json() or {}
+        system = data.get("system", "")
+        messages = data.get("messages", [])
+        max_tokens = data.get("max_tokens", 120)
+
+        ibm_api_key = os.getenv("IBM_API_KEY")
+        wx_url = os.getenv("WX_URL", "https://us-south.ml.cloud.ibm.com")
+        model_id = os.getenv("MODEL_ID", "ibm/granite-3-8b-instruct")
+        project_id = os.getenv("IBM_PROJECT_ID")
+
+        token_res = requests.post(
+            "https://iam.cloud.ibm.com/identity/token",
+            data=f"grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey={ibm_api_key}",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        token = token_res.json().get("access_token")
+
+        wx_res = requests.post(
+            f"{wx_url}/ml/v1/text/chat?version=2023-05-29",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={
+                "model_id": model_id,
+                "messages": [{"role": "system", "content": system}] + messages,
+                "project_id": project_id,
+                "max_tokens": max_tokens,
+                "parameters": {"temperature": 0.7},
+            },
+        )
+        reply = wx_res.json()["choices"][0]["message"]["content"].strip()
+        return jsonify({"reply": reply}), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
 @app.route("/api/generate-passage", methods=["POST"])
 def generate_passage():
     try:

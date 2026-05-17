@@ -11,6 +11,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
 let sessionRestored = false;
+let currentScreenId = 'loadingScreen';
 let currentStudent = {};
 let currentClassCode = '';
 let currentClassName = '';
