@@ -216,7 +216,7 @@ async function handleStudentMessage(text) {
 
   let reply;
   try {
-    reply = await callGroq();
+    reply = await callIBM();
   } catch {
     reply = `That's a great thought! What else is on your mind?`;
   } finally {
@@ -298,61 +298,28 @@ function handleConfidenceChoice(level) {
   bookwormSpeak(reply);
 }
 
-async function callGroq() {
-  const lang = currentLanguage === 'es' ? ' Respond only in Spanish. Use simple, friendly Spanish for an elementary student.' : '';
-  const studentName = bookwormContext?.studentName || currentStudent?.name || 'there';
-  const fallback = `That's a great thought, ${studentName}! What else can I help you with?`;
+async function callIBM() {
+  const difficultList = bookwormContext.difficultWords?.length > 0
+    ? bookwormContext.difficultWords.join(', ')
+    : 'none';
 
-  let system;
+  const memoryBlock = bookwormMemory
+    ? `\n${bookwormMemory}\nUse this history naturally — reference past books when relevant, notice patterns, make the student feel known. Don't recite the history mechanically.`
+    : '';
 
-  const assignedBookList = (libraryBooks || []).map(b => `"${b.title}"`).join(', ') || 'none assigned yet';
+  const scoreInfo = bookwormContext.score !== null
+    ? `Reading fluency score from this session: ${bookwormContext.score}% (this is a pronunciation and fluency score from the AI speech tool, not a school grade — you have full access to it and should use it)`
+    : 'Reading score: not yet available (student has not read aloud yet)';
 
-  if (!bookwormContext) {
-    const screenLabels = {
-      roleScreen: 'the welcome page — the user has not logged in yet and needs to choose Student or Teacher',
-      studentAuthScreen: 'the student login/sign-up page — the user needs to sign in or create an account',
-      teacherAuthScreen: 'the teacher login page',
-      libraryScreen: `the library page — the student is browsing their assigned books: ${assignedBookList}`,
-      readingScreen: 'the reading page — the student picked a book and is about to read it aloud',
-      progressScreen: 'the progress page — showing the student their past reading scores and streaks',
-      teacherDashboardScreen: 'the teacher dashboard'
-    };
-    const location = screenLabels[currentScreenId] || 'the app';
-    system = `You are Bookworm, a friendly AI reading buddy for MichiganReads, powered by IBM Granite.${lang}
-WHERE THE USER IS RIGHT NOW: ${location}
-Student name: ${currentStudent?.name || 'unknown'}, Grade: ${currentStudent?.grade || 'unknown'}
-The student's assigned books are: ${assignedBookList}. ONLY suggest books from this list — never suggest books that are not on it.
-Keep replies to 2-3 short sentences. Be warm and encouraging. Ask only one question at a time. Do not make up book titles.`;
-  } else {
-    const difficultList = bookwormContext.difficultWords?.length > 0
-      ? bookwormContext.difficultWords.join(', ') : 'none';
+  const challengeBlock = bookwormChallengeWords.length > 0
+    ? `\nVOCABULARY CHALLENGE: After 2 comprehension exchanges, shift into vocab practice. Pick one of these mispronounced words (${bookwormChallengeWords.slice(0, 3).join(', ')}) and say: "Let's practice a tricky word! Can you use '____' in a sentence?" After they try, praise the effort and give a one-sentence tip. Then try another word. Keep it playful — like a game, not a quiz. After 2-3 words return to comprehension.`
+    : '';
 
-    const memoryBlock = bookwormMemory
-      ? `\n${bookwormMemory}\nUse this history naturally — reference past books when relevant. Don't recite it mechanically.`
-      : '';
+  const recurringBlock = bookwormRecurringWords.length > 0
+    ? `\nRECURRING STRUGGLE WORDS — this student has mispronounced these across multiple sessions: ${bookwormRecurringWords.join(', ')}. Bring one up early and naturally: "Hey, last time you had trouble with '____' — want to try it again today?"`
+    : '';
 
-    const scoreInfo = bookwormContext.score !== null && bookwormContext.score !== undefined
-      ? `Reading fluency score from this session: ${bookwormContext.score}% (pronunciation and fluency score — you always have access to it)`
-      : 'Reading score: not yet available (student has not read aloud yet)';
-
-    const challengeBlock = bookwormChallengeWords.length > 0
-      ? `\nVOCABULARY CHALLENGE: After 2 comprehension exchanges, shift into vocab practice. Pick one of these mispronounced words (${bookwormChallengeWords.slice(0, 3).join(', ')}) and say: "Let's practice a tricky word! Can you use '____' in a sentence?" Keep it playful.`
-      : '';
-
-    const recurringBlock = bookwormRecurringWords.length > 0
-      ? `\nRECURRING STRUGGLE WORDS — this student has mispronounced these across multiple sessions: ${bookwormRecurringWords.join(', ')}. Bring one up naturally early on.`
-      : '';
-
-    const screenCtx = currentScreenId === 'readingScreen'
-      ? `The student is currently on the reading page and has NOT read aloud yet — encourage them to tap the microphone and start reading.`
-      : currentScreenId === 'libraryScreen'
-      ? `The student is browsing the library and has selected "${bookwormContext.title}" — they have not read it yet.`
-      : `The student has just finished reading "${bookwormContext.title}" and received feedback.`;
-
-    system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students powered by IBM Granite.${lang}
-CURRENT BOOK (this is the only book in this session — do not reference any other book as the current one): "${bookwormContext.title}"
-PASSAGE ON SCREEN RIGHT NOW: "${(bookwormContext.passage || '').substring(0, 250)}"
-Current situation: ${screenCtx}
+  const system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students.${currentLanguage === 'es' ? ' Respond only in Spanish. Use simple, friendly Spanish for an elementary student.' : ''}
 Student name: ${bookwormContext.studentName}, Grade ${bookwormContext.grade}
 ${scoreInfo}
 Words they struggled to pronounce today: ${difficultList}
@@ -368,18 +335,15 @@ Rules:
 - Never suggest a book that is not in the assigned books list above`;
   }
 
-  try {
-    const res = await fetch('http://localhost:5000/api/bookworm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system, messages: bookwormHistory, max_tokens: 120 })
-    });
-    const data = await res.json();
-    return data.reply || fallback;
-  } catch (err) {
-    console.error('Bookworm error:', err);
-    return fallback;
-  }
+  const { data, error } = await sb.functions.invoke('ibm-chat', {
+    body: {
+      messages: [{ role: 'system', content: system }, ...bookwormHistory],
+      max_tokens: 120,
+      project_id: IBM_PROJECT_ID
+    }
+  });
+  if (error || !data?.content) throw new Error(error || 'No content');
+  return data.content;
 }
 
 // ── Cross-session memory ──────────────────────────────────────────────────────
@@ -477,14 +441,8 @@ async function generateSessionSummary() {
     .join('\n');
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+    const { data, error } = await sb.functions.invoke('ibm-chat', {
+      body: {
         messages: [
           {
             role: 'system',
@@ -493,11 +451,11 @@ async function generateSessionSummary() {
           { role: 'user', content: convo }
         ],
         max_tokens: 100,
-        temperature: 0.3
-      })
+        project_id: IBM_PROJECT_ID
+      }
     });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || null;
+    if (error || !data?.content) return null;
+    return data.content.trim() || null;
   } catch (err) {
     console.error('Summary generation error:', err);
     return null;

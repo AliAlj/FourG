@@ -185,7 +185,9 @@ function readerNextPage() {
 }
 
 function finishBook() {
-  const avg = Math.round(readerPageScores.reduce((s, x) => s + x, 0) / readerPageScores.length);
+  const avg = readerPageScores.length > 0
+    ? Math.round(readerPageScores.reduce((s, x) => s + x, 0) / readerPageScores.length)
+    : 0;
   const color = avg >= 90 ? '#2e7d32' : avg >= 75 ? '#1a3a5c' : avg >= 60 ? '#e65100' : '#c62828';
   const message = avg >= 90 ? 'Outstanding reading!' : avg >= 75 ? 'Great job!' : avg >= 60 ? 'Good effort!' : 'Keep practicing!';
 
