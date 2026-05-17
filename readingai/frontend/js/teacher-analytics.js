@@ -13,8 +13,10 @@ async function loadClassAnalytics(classCode) {
   }
 
   const studentIds = profiles.map(p => p.user_id);
-  const { data: sessions } = await sb.from('reading_sessions')
-    .select('*').in('student_id', studentIds).order('created_at', { ascending: false });
+  const [{ data: sessions }, { data: bwSessions }] = await Promise.all([
+    sb.from('reading_sessions').select('*').in('student_id', studentIds).order('created_at', { ascending: false }),
+    sb.from('bookworm_sessions').select('student_id, confidence_level, created_at').in('student_id', studentIds).order('created_at', { ascending: false })
+  ]);
 
   const allReadingSessions = (sessions || []).filter(s => s.overall_score != null && !isNaN(s.overall_score));
   const byStudent = {};
@@ -23,11 +25,78 @@ async function loadClassAnalytics(classCode) {
     byStudent[s.student_id].push(s);
   });
 
+  // Most recent confidence level per student
+  const confidenceByStudent = {};
+  (bwSessions || []).forEach(s => {
+    if (s.confidence_level && !confidenceByStudent[s.student_id]) {
+      confidenceByStudent[s.student_id] = s.confidence_level;
+    }
+  });
+
   window._analyticsProfiles = profiles;
   window._analyticsByStudent = byStudent;
 
-  renderStudentOverviewCards(profiles, byStudent);
+  renderStudentOverviewCards(profiles, byStudent, confidenceByStudent);
   renderClassWordsHeatmap(allReadingSessions);
+  startLiveSection(classCode);
+}
+
+// ── Live reading dashboard ────────────────────────────────────────────────────
+let _liveReaders = new Map();
+let _liveChannel = null;
+
+async function startLiveSection(classCode) {
+  // Fetch any currently active readers
+  try {
+    const { data } = await sb.from('reading_presence').select('*').eq('class_code', classCode);
+    _liveReaders = new Map((data || []).map(r => [r.id, r]));
+  } catch {}
+  renderLiveSection();
+
+  // Clean up any previous subscription
+  if (_liveChannel) { sb.removeChannel(_liveChannel); _liveChannel = null; }
+
+  _liveChannel = sb.channel(`live-${classCode}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'reading_presence',
+      filter: `class_code=eq.${classCode}`
+    }, payload => {
+      if (payload.eventType === 'INSERT') {
+        _liveReaders.set(payload.new.id, payload.new);
+      } else if (payload.eventType === 'DELETE') {
+        _liveReaders.delete(payload.old.id);
+      }
+      renderLiveSection();
+    })
+    .subscribe();
+}
+
+function renderLiveSection() {
+  const el = document.getElementById('liveSection');
+  if (!el) return;
+  const readers = [..._liveReaders.values()];
+  if (readers.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = `
+    <div class="live-section">
+      <div class="live-header">
+        <span class="pulse-dot"></span>
+        <span class="live-title">Reading right now</span>
+        <span class="live-count">${readers.length} student${readers.length > 1 ? 's' : ''}</span>
+      </div>
+      <div class="live-readers">
+        ${readers.map(r => `
+          <div class="live-reader-chip">
+            <span class="live-reader-name">${r.student_name}</span>
+            <span class="live-reader-book">${r.book_title || 'reading...'}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
 }
 
 function analyticsScoreColor(score) {
@@ -98,12 +167,15 @@ function renderAtRiskBanner(atRisk) {
     </div>`;
 }
 
-function renderStudentOverviewCards(profiles, byStudent) {
+function renderStudentOverviewCards(profiles, byStudent, confidenceByStudent = {}) {
   window._studentProfiles = {};
   profiles.forEach(p => { window._studentProfiles[p.user_id] = p; });
 
   const weekAgo = new Date(Date.now() - 7 * 86400000);
   const atRisk = computeAtRisk(profiles, byStudent);
+
+  const confidenceEmoji = { easy: '😊', medium: '😐', hard: '😓' };
+  const confidenceLabel = { easy: 'Felt easy', medium: 'Felt medium', hard: 'Felt hard' };
 
   const cards = profiles.map(p => {
     const sessions = byStudent[p.user_id] || [];
@@ -121,10 +193,18 @@ function renderStudentOverviewCards(profiles, byStudent) {
       : null;
     const compColor = compAvg === null ? '#bbb' : compAvg >= 80 ? '#2e7d32' : compAvg >= 60 ? '#e65100' : '#c62828';
 
-    return `<div class="soc ${inactive ? 'soc-inactive' : ''}">
+    const confidence = confidenceByStudent[p.user_id];
+    const confBadge = confidence
+      ? `<span title="${confidenceLabel[confidence]}" style="font-size:0.75rem;cursor:default">${confidenceEmoji[confidence]}</span>`
+      : '';
+
+    // Flag students scoring high but feeling hard — hidden struggle
+    const hiddenStruggle = confidence === 'hard' && avg !== null && avg >= 75;
+
+    return `<div class="soc ${inactive ? 'soc-inactive' : ''}${hiddenStruggle ? ' soc-hidden-struggle' : ''}">
       <div class="soc-top">
         <div>
-          <div class="soc-name">${p.name}</div>
+          <div class="soc-name">${p.name} ${confBadge}</div>
           <div class="soc-grade">Grade ${p.grade}</div>
         </div>
         <div style="text-align:right">
@@ -134,11 +214,13 @@ function renderStudentOverviewCards(profiles, byStudent) {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.35rem">
         <div class="soc-footer ${inactive ? 'soc-warn' : ''}" style="margin-top:0">
-          ${inactive
-            ? "⚠️ Hasn't read this week"
-            : lastDate
-              ? 'Last read ' + lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-              : 'No readings yet'}
+          ${hiddenStruggle
+            ? '⚠️ Scoring well but feels hard — check in'
+            : inactive
+              ? "⚠️ Hasn't read this week"
+              : lastDate
+                ? 'Last read ' + lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : 'No readings yet'}
         </div>
         ${compAvg !== null
           ? `<div style="font-size:0.68rem;font-weight:700;color:${compColor};white-space:nowrap">📝 ${compAvg}%</div>`
@@ -238,22 +320,18 @@ ACTIVITY (2-3 min):
 Include a hook, a WORD block for each of the top 4-5 words, and a closing activity.`;
 
   try {
-    const token = await getIBMToken();
-    const res = await fetch(`${WX_URL}/ml/v1/text/chat?version=2023-05-29`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model_id: MODEL_ID,
+    const { data, error } = await sb.functions.invoke('ibm-chat', {
+      body: {
         messages: [
           { role: 'system', content: sys },
           { role: 'user', content: msg }
         ],
         project_id: IBM_PROJECT_ID,
         max_tokens: 800
-      })
+      }
     });
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim();
+    if (error) throw error;
+    const text = data.content?.trim();
     if (!text) throw new Error('empty response');
     renderLessonPlan(text);
   } catch {
@@ -454,7 +532,6 @@ async function generateWeeklySummaries() {
   btn.textContent = 'Generating...';
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-  const token = await getIBMToken();
 
   const cards = [];
   for (const profile of profiles) {
@@ -467,7 +544,7 @@ async function generateWeeklySummaries() {
     if (!weekSessions.length) {
       summary = `${profile.name} did not have any recorded reading sessions this week.`;
     } else {
-      summary = await generateStudentSummary(profile, weekSessions, allSessions, token);
+      summary = await generateStudentSummary(profile, weekSessions, allSessions);
     }
 
     cards.push({ name: profile.name, grade: profile.grade, summary, sessionCount: weekSessions.length });
@@ -478,7 +555,7 @@ async function generateWeeklySummaries() {
   btn.textContent = '📧 Regenerate';
 }
 
-async function generateStudentSummary(profile, weekSessions, allSessions, token) {
+async function generateStudentSummary(profile, weekSessions, allSessions) {
   const avg = Math.round(weekSessions.reduce((s, x) => s + x.overall_score, 0) / weekSessions.length);
   const books = [...new Set(weekSessions.map(s => s.book_title.replace(/ \(Page \d+\)$/, '')))];
   const hardWords = [...new Set(weekSessions.flatMap(s => s.difficult_words || [])
@@ -509,21 +586,18 @@ ${trend ? `Compared to last week: ${trend}` : ''}
 Write a parent-facing summary of this student's reading week.`;
 
   try {
-    const res = await fetch(`${WX_URL}/ml/v1/text/chat?version=2023-05-29`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model_id: MODEL_ID,
+    const { data, error } = await sb.functions.invoke('ibm-chat', {
+      body: {
         messages: [
           { role: 'system', content: sys },
           { role: 'user', content: msg }
         ],
         project_id: IBM_PROJECT_ID,
         max_tokens: 150
-      })
+      }
     });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim()
+    if (error) throw error;
+    return data.content?.trim()
       || `${profile.name} completed ${weekSessions.length} reading session${weekSessions.length > 1 ? 's' : ''} this week with an average score of ${avg}%.`;
   } catch {
     return `${profile.name} completed ${weekSessions.length} reading session${weekSessions.length > 1 ? 's' : ''} this week with an average score of ${avg}%.`;

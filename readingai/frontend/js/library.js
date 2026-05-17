@@ -36,7 +36,6 @@ async function loadLibraryBooks() {
       currentCompletedBooks = new Set((done || []).map(s => s.book_title.toLowerCase()));
     } catch {}
   }
-  allBooks = allBooks.filter(b => currentAssignments.includes(b.title.toLowerCase()));
   document.getElementById('libraryLoading').style.display = 'none';
   renderLibrary(allBooks, currentLibraryFilter);
 }
@@ -70,7 +69,7 @@ function assignedBadgeHtml(title) {
 
 function renderLibrary(books, gradeFilter) {
   libraryBooks = books;
-  const eligible = books.filter(b => b.grade <= currentStudent.grade);
+  const eligible = books.filter(b => !b.grade || b.grade <= (currentStudent.grade || 99));
   const sorted = [...eligible].sort((a, b) => {
     const aAssigned = findAssignment(a.title) ? 1 : 0;
     const bAssigned = findAssignment(b.title) ? 1 : 0;
@@ -85,7 +84,7 @@ function renderLibrary(books, gradeFilter) {
     ).join('');
   if (!filtered.length) {
     document.getElementById('libraryGrid').innerHTML =
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center"><img src="assets/wormAi.png" alt="" style="width:90px;opacity:0.7;margin-bottom:1rem"><p style="font-size:1rem;font-weight:600;color:#aaa;margin:0">No books assigned yet.</p></div>';
+      '<div class="empty-state"><div class="icon">📚</div><p>No books available yet.</p></div>';
     return;
   }
   document.getElementById('libraryGrid').innerHTML = filtered.map(book => {
@@ -96,6 +95,7 @@ function renderLibrary(books, gradeFilter) {
     const illustratedBadge = book.source === 'illustrated'
       ? '<span class="source-illustrated-badge">🖼️ Illustrated</span>' : '';
     const assignedBadge = assignedBadgeHtml(book.title);
+    const excerpt = (book.text || '').substring(0, 110) + '…';
     const coverHtml = book.cover_url
       ? `<div class="book-card-img-container">
           ${assignedBadge}
@@ -134,18 +134,44 @@ function filterLibrary(grade) {
   renderLibrary(libraryBooks, grade);
 }
 
+const PASSAGE_CHUNK_WORDS = 120;
+
+function chunkBookText(text) {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= PASSAGE_CHUNK_WORDS) return [text];
+  const chunks = [];
+  for (let i = 0; i < words.length; i += PASSAGE_CHUNK_WORDS) {
+    chunks.push(words.slice(i, i + PASSAGE_CHUNK_WORDS).join(' '));
+  }
+  return chunks;
+}
+
+function getNextChunkIndex(bookKey, totalChunks) {
+  const storageKey = `chunk_${bookKey}`;
+  const last = parseInt(localStorage.getItem(storageKey) ?? '-1');
+  const next = (last + 1) % totalChunks;
+  localStorage.setItem(storageKey, next);
+  return next;
+}
+
 function selectLibraryBook(index) {
   currentBook = libraryBooks[index];
   if (currentBook.type === 'illustrated' && currentBook.pages) {
     openBookReader(currentBook);
     return;
   }
+  const chunks = chunkBookText(currentBook.text);
+  const chunkIdx = getNextChunkIndex(currentBook.title, chunks.length);
+  const passageText = chunks[chunkIdx];
+  const chunkLabel = chunks.length > 1 ? ` — Part ${chunkIdx + 1} of ${chunks.length}` : '';
+
   document.getElementById('passageGradeLabel').innerText = `Grade ${currentBook.grade} Passage`;
   document.getElementById('passageTopicBadge').innerText = currentBook.topic || '';
   document.getElementById('passageTitle').innerText = currentBook.title;
-  renderTextAsWordSpans(currentBook.text, 'passageText');
+  renderTextAsWordSpans(passageText, 'passageText');
+  const levelChip = getLevelWarning(currentBook.reading_level_band, currentStudent?.grade);
   document.getElementById('passageChips').innerHTML =
-    `<button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem;margin-bottom:0.5rem">&#8592; Library</button>`;
+    `<button class="btn-secondary" onclick="goToLibrary()" style="font-size:0.78rem;padding:0.35rem 0.8rem;margin-bottom:0.5rem">&#8592; Library</button>${chunkLabel ? `<span style="font-size:0.75rem;color:#888;margin-left:0.5rem">${chunkLabel}</span>` : ''}${levelChip}`;
   resetReadingState();
   showScreen('readingScreen');
 }
@@ -174,15 +200,28 @@ function renderLibraryAdmin(books) {
       </div>`;
     return;
   }
-  list.innerHTML = books.map(b =>
-    `<div class="library-book-admin">
-      <div>
+  list.innerHTML = books.map(b => {
+    const words = (b.text || '').trim().split(/\s+/).length;
+    const chunks = Math.ceil(words / PASSAGE_CHUNK_WORDS);
+    const chunkNote = chunks > 1 ? `<span style="font-size:0.7rem;color:#2e7d32;font-weight:600">${chunks} rotating passages</span>` : '';
+    const sourceBadge = b.source_service
+      ? `<span style="font-size:0.7rem;background:#e8f0fe;color:#1a3a5c;padding:0.15rem 0.5rem;border-radius:6px;font-weight:600">${b.source_service}</span>`
+      : '';
+    const sourceLink = b.source_url
+      ? `<a href="${b.source_url}" target="_blank" rel="noopener" style="font-size:0.7rem;color:#888">🔗 Source</a>`
+      : '';
+    const levelBadge = b.reading_level_band
+      ? `<span title="${b.reading_level_reason || ''}" style="font-size:0.7rem;background:#f0f4ff;color:#3949ab;padding:0.15rem 0.5rem;border-radius:6px;font-weight:600;cursor:help">📊 Grade ${b.reading_level_band}</span>`
+      : '';
+    return `<div class="library-book-admin">
+      <div style="display:flex;flex-direction:column;gap:0.2rem;min-width:0">
         <div class="library-book-admin-title">${b.title}</div>
         <div class="library-book-admin-meta">Grade ${b.grade} · ${b.topic || 'General'}${b.author ? ` · by ${b.author}` : ''}</div>
+        <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;margin-top:0.1rem">${sourceBadge}${levelBadge}${chunkNote}${sourceLink}</div>
       </div>
       <button class="btn-danger" onclick="deleteBook('${b.id}')">Remove</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
 function debounceBookSearch(query) {
@@ -329,15 +368,68 @@ document.addEventListener('click', e => {
 
 function showAddBookForm() { document.getElementById('addBookForm').style.display = 'block'; }
 
+function handleSourceServiceChange() {
+  const service = document.getElementById('newBookSourceService').value;
+  const note = document.getElementById('sourceServiceNote');
+  const tips = {
+    'ReadWorks': 'Sign in to ReadWorks, find a text, copy the passage, and paste it below. Your school subscription gives you access to all grade levels.',
+    'NewsELA': 'Sign in to NewsELA, open an article, choose the Lexile level for your class, then copy and paste the article text below.',
+    'CommonLit': 'Open CommonLit, find a text, and copy the reading passage into the box below.',
+    'Epic!': 'Open the book in Epic!, then copy the page text you want students to read aloud and paste it below.',
+    'Raz-Kids': 'Open the book in Raz-Kids, select the passage level, copy the text, and paste it below.',
+    'Scholastic': 'Find the article or story on Scholastic, copy the passage text, and paste it below.',
+    'Project Gutenberg': 'Search above by title to auto-fill public domain text, or paste it manually below.',
+  };
+  if (tips[service]) {
+    note.textContent = `📚 ${tips[service]}`;
+    note.style.display = 'block';
+  } else {
+    note.style.display = 'none';
+  }
+}
+
 function hideAddBookForm() {
   document.getElementById('addBookForm').style.display = 'none';
-  ['newBookTitle', 'newBookAuthor', 'newBookText', 'newBookTopic', 'bookSearchInput'].forEach(id =>
+  ['newBookTitle', 'newBookAuthor', 'newBookText', 'newBookTopic', 'bookSearchInput', 'newBookSourceUrl'].forEach(id =>
     document.getElementById(id).value = '');
+  document.getElementById('newBookSourceService').value = '';
+  document.getElementById('sourceServiceNote').style.display = 'none';
   document.getElementById('bookSearchResults').classList.remove('open');
   document.getElementById('gutenbergFetchBtn').style.display = 'none';
   document.getElementById('gutenbergLink')?.remove();
   selectedBookCoverUrl = '';
   gutenbergTextUrl = null;
+}
+
+async function classifyReadingLevel(text) {
+  try {
+    const sample = text.trim().split(/\s+/).slice(0, 150).join(' ');
+    const { data, error } = await sb.functions.invoke('ibm-chat', {
+      body: {
+        messages: [
+          { role: 'system', content: 'You are a reading specialist. Respond only in JSON. No markdown. No explanation.' },
+          { role: 'user', content: `Classify this passage by US school reading grade level.\nPassage: "${sample}"\nReturn: {"grade_band": "3-4", "reason": "one sentence"}` }
+        ],
+        project_id: IBM_PROJECT_ID,
+        max_tokens: 80
+      }
+    });
+    if (error || !data?.content) return null;
+    const clean = data.content.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch { return null; }
+}
+
+function getLevelWarning(bandStr, studentGrade) {
+  if (!bandStr || !studentGrade) return '';
+  const nums = (bandStr.match(/\d+/g) || []).map(Number);
+  if (!nums.length) return '';
+  const lower = Math.min(...nums);
+  const upper = Math.max(...nums);
+  if (studentGrade < lower - 1) {
+    return `<span class="level-badge level-hard">⚠️ Grade ${bandStr} level — may be challenging</span>`;
+  }
+  return `<span class="level-badge level-match">✓ Grade ${bandStr} level</span>`;
 }
 
 async function addBook() {
@@ -346,12 +438,25 @@ async function addBook() {
   const grade = window.currentClassGrade || teacherClasses[0]?.grade || 4;
   const topic = document.getElementById('newBookTopic').value.trim();
   const text = document.getElementById('newBookText').value.trim();
+  const sourceService = document.getElementById('newBookSourceService').value;
+  const sourceUrl = document.getElementById('newBookSourceUrl').value.trim();
   if (!title || !text) { alert('Please fill in the title and passage text.'); return; }
+
+  const saveBtn = document.querySelector('[onclick="addBook()"]');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Analyzing level...'; }
+
+  const level = await classifyReadingLevel(text);
+
   const { data: { user } } = await sb.auth.getUser();
   const { error } = await sb.from('library_books').insert({
     teacher_id: user.id, title, author, grade, topic, text,
-    cover_url: selectedBookCoverUrl || null
+    cover_url: selectedBookCoverUrl || null,
+    source_service: sourceService || null,
+    source_url: sourceUrl || null,
+    reading_level_band: level?.grade_band || null,
+    reading_level_reason: level?.reason || null
   });
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save to library'; }
   if (error) {
     alert('Could not save. Make sure the library_books table exists in Supabase.');
     return;
