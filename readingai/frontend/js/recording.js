@@ -71,6 +71,7 @@ function playBackRecording() {
   const audio = document.getElementById('playbackAudio');
   if (!audio || !lastRecordingUrl) return;
   if (audio.paused) {
+    stopAllSpeech();
     audio.play();
     document.getElementById('playbackBtn').textContent = '⏸ Pause';
   } else {
