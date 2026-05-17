@@ -3,37 +3,47 @@ async function goToProgress() {
   ['progressStreak','progressStats','progressLevel','progressWordBtn','progressList'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
-  document.getElementById('progressStreak').innerHTML = '<div class="progress-loading">Loading your progress...</div>';
+  document.getElementById('progressStats').innerHTML =
+    '<div class="dots" style="text-align:center;padding:1rem"><span></span><span></span><span></span></div>';
   await loadProgress();
 }
 
 async function loadProgress() {
-  if (!currentStudent.userId) {
-    document.getElementById('progressStreak').innerHTML = '<p style="color:#aaa">Sign in to see your progress.</p>';
+  if (!currentStudent?.userId) {
+    document.getElementById('progressStats').innerHTML = '<p style="color:#aaa;text-align:center;padding:1rem">Sign in to track your progress over time.</p>';
     return;
   }
 
   const { data, error } = await sb.from('reading_sessions')
     .select('*')
     .eq('student_id', currentStudent.userId)
+    .not('overall_score', 'is', null)
+    .gt('overall_score', 0)
     .order('created_at', { ascending: false });
 
   if (error || !data) {
-    document.getElementById('progressStreak').innerHTML = '<p style="color:#aaa">Could not load progress.</p>';
+    document.getElementById('progressStats').innerHTML = '<p style="color:#aaa">Could not load progress.</p>';
     return;
   }
 
-  if (!data.length) {
-    document.getElementById('progressStreak').innerHTML =
-      '<p style="color:#aaa;text-align:center;padding:2rem 0">No readings yet — pick a book from the library to get started!</p>';
+  const valid = data;
+
+  if (!valid.length) {
+    document.getElementById('progressStats').innerHTML = `
+      <div style="text-align:center;padding:2rem;color:#aaa">
+        <div style="font-size:3rem;margin-bottom:0.75rem">📚</div>
+        <p style="margin-bottom:1.25rem">No readings yet — pick a book from the library to get started!</p>
+        <button class="btn-primary" onclick="goToLibrary()">Go to Library</button>
+      </div>`;
     return;
   }
 
   renderStreak(data);
-  renderProgressStats(data);
-  renderReadingLevel(data);
+  renderProgressStats(valid);
+  renderProgressChart(valid);
+  renderReadingLevel(valid);
   renderWordPracticeButton(data);
-  renderProgressList(data);
+  renderProgressList(valid);
 }
 
 function calculateStreak(sessions) {
@@ -53,50 +63,88 @@ function calculateStreak(sessions) {
 
 function renderStreak(sessions) {
   const streak = calculateStreak(sessions);
-  if (streak === 0) {
+  if (streak < 2) {
     document.getElementById('progressStreak').innerHTML =
       `<div class="streak-card streak-zero">Read today to start your streak! 📖</div>`;
     return;
   }
+  const flames = streak >= 7 ? '🔥🔥🔥' : streak >= 3 ? '🔥🔥' : '🔥';
   const message = streak >= 7 ? "You're on fire!" : streak >= 3 ? 'Keep it up!' : 'Great start!';
   document.getElementById('progressStreak').innerHTML =
     `<div class="streak-card">
-      <span class="streak-flame">🔥</span>
+      <span class="streak-flame">${flames}</span>
       <span class="streak-number">${streak}</span>
       <span class="streak-label">day streak · ${message}</span>
     </div>`;
 }
 
-function renderProgressStats(sessions) {
-  const avg = Math.round(sessions.reduce((sum, s) => sum + s.overall_score, 0) / sessions.length);
-  const best = Math.max(...sessions.map(s => s.overall_score));
-  const color = avg >= 90 ? '#2e7d32' : avg >= 75 ? '#1a3a5c' : avg >= 60 ? '#e65100' : '#c62828';
+function renderProgressStats(valid) {
+  const avg = Math.round(valid.reduce((sum, s) => sum + s.overall_score, 0) / valid.length);
+  const best = Math.max(...valid.map(s => s.overall_score));
+  const uniqueBooks = new Set(valid.map(s => s.book_title.replace(/ \(Page \d+\)$/, ''))).size;
+  const compSessions = valid.filter(s => s.comprehension_score != null);
+  const compAvg = compSessions.length
+    ? Math.round(compSessions.reduce((s, x) => s + x.comprehension_score, 0) / compSessions.length)
+    : null;
+
+  const scoreColor = sc => sc >= 90 ? '#2e7d32' : sc >= 75 ? '#1a3a5c' : sc >= 60 ? '#e65100' : '#c62828';
+
   document.getElementById('progressStats').innerHTML = `
     <div class="progress-stats-row">
       <div class="progress-stat">
-        <div class="progress-stat-value" style="color:${color}">${avg}%</div>
-        <div class="progress-stat-label">Average Score</div>
-      </div>
-      <div class="progress-stat">
-        <div class="progress-stat-value" style="color:#2e7d32">${best}%</div>
-        <div class="progress-stat-label">Best Score</div>
-      </div>
-      <div class="progress-stat">
-        <div class="progress-stat-value" style="color:#1a3a5c">${sessions.length}</div>
+        <div class="progress-stat-value" style="color:#1a3a5c">${uniqueBooks}</div>
         <div class="progress-stat-label">Books Read</div>
       </div>
+      <div class="progress-stat">
+        <div class="progress-stat-value" style="color:${scoreColor(avg)}">${avg}%</div>
+        <div class="progress-stat-label">Avg Score</div>
+      </div>
+      <div class="progress-stat">
+        <div class="progress-stat-value" style="color:${scoreColor(best)}">${best}%</div>
+        <div class="progress-stat-label">Best Score</div>
+      </div>
+      ${compAvg !== null ? `
+      <div class="progress-stat">
+        <div class="progress-stat-value" style="color:#6a1a8c">${compAvg}%</div>
+        <div class="progress-stat-label">Comprehension</div>
+      </div>` : ''}
     </div>`;
 }
 
-function renderReadingLevel(sessions) {
+function renderProgressChart(valid) {
+  const recent = valid.slice(0, 10).reverse();
+  if (recent.length < 2) return;
+  const scoreColor = sc => sc >= 90 ? '#2e7d32' : sc >= 75 ? '#1a3a5c' : sc >= 60 ? '#e65100' : '#c62828';
+  const bars = recent.map(s => {
+    const color = scoreColor(s.overall_score);
+    const title = s.book_title.replace(/ \(Page \d+\)$/, '');
+    const short = title.length > 10 ? title.substring(0, 10) + '…' : title;
+    const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `
+      <div class="progress-bar-col">
+        <div class="progress-bar-score" style="color:${color}">${s.overall_score}%</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="height:${s.overall_score}%;background:${color}"></div>
+        </div>
+        <div class="progress-bar-label">${short}</div>
+        <div class="progress-bar-date">${date}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('progressLevel').innerHTML = `
+    <h3 style="margin:1.5rem 0 0.75rem;font-size:0.95rem;color:#555">Score History</h3>
+    <div class="progress-chart">${bars}</div>`;
+}
+
+function renderReadingLevel(valid) {
   const grade = currentStudent.grade || 3;
-  const recent = sessions.slice(0, 5);
+  const recent = valid.slice(0, 5);
+  if (!recent.length) return;
   const avg = Math.round(recent.reduce((sum, s) => sum + s.overall_score, 0) / recent.length);
   const threshold = 85;
   const ready = avg >= threshold && recent.length >= 3;
   const pct = Math.min(100, Math.round((avg / threshold) * 100));
 
-  document.getElementById('progressLevel').innerHTML = `
+  const levelHtml = `
     <div class="level-card">
       <div class="level-header">
         <span class="level-title">Reading Level</span>
@@ -110,6 +158,8 @@ function renderReadingLevel(sessions) {
            <div class="level-hint">${threshold - avg > 0 ? `${threshold - avg}% more to reach Grade ${grade + 1} level` : 'Almost there!'}</div>`
       }
     </div>`;
+
+  document.getElementById('progressLevel').insertAdjacentHTML('beforeend', levelHtml);
 }
 
 function renderWordPracticeButton(sessions) {
@@ -134,25 +184,33 @@ function aggregateDifficultWords(sessions) {
     .map(([word, count]) => ({ word, count }));
 }
 
-function renderProgressList(sessions) {
+function renderProgressList(valid) {
+  const scoreColor = sc => sc >= 90 ? '#2e7d32' : sc >= 75 ? '#1a3a5c' : sc >= 60 ? '#e65100' : '#c62828';
   document.getElementById('progressList').innerHTML = `
     <h3 style="margin:1.5rem 0 0.75rem;font-size:0.95rem;color:#555">Reading History</h3>
-    ${sessions.map(s => {
+    ${valid.slice(0, 20).map(s => {
       const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const color = s.overall_score >= 90 ? '#2e7d32' : s.overall_score >= 75 ? '#1a3a5c' : s.overall_score >= 60 ? '#e65100' : '#c62828';
-      const words = s.difficult_words?.length ? s.difficult_words.join(', ') : null;
+      const color = scoreColor(s.overall_score);
+      const words = (s.difficult_words || []).filter(w => typeof w === 'string' ? w : w?.word).slice(0, 5);
+      const wordStr = words.map(w => typeof w === 'string' ? w : w.word).join(', ');
+      const compBadge = s.comprehension_score != null
+        ? `<span style="font-size:0.7rem;font-weight:700;color:#6a1a8c;background:#f3e8ff;padding:0.1rem 0.45rem;border-radius:99px">📝 ${s.comprehension_score}%</span>`
+        : '';
       return `
         <div class="progress-session-card">
           <div class="progress-session-top">
             <div class="progress-session-title">${s.book_title}</div>
-            <div class="progress-session-score" style="color:${color}">${s.overall_score}%</div>
+            <div style="display:flex;align-items:center;gap:0.4rem">
+              ${compBadge}
+              <div class="progress-session-score" style="color:${color}">${s.overall_score}%</div>
+            </div>
           </div>
           <div class="progress-session-scores">
-            <span>Accuracy ${s.accuracy_score}%</span>
-            <span>Fluency ${s.fluency_score}%</span>
-            <span>Completeness ${s.completeness_score}%</span>
+            <span>Accuracy ${s.accuracy_score ?? '—'}%</span>
+            <span>Fluency ${s.fluency_score ?? '—'}%</span>
+            <span>Completeness ${s.completeness_score ?? '—'}%</span>
           </div>
-          ${words ? `<div class="progress-session-words">Words to practice: ${words}</div>` : ''}
+          ${wordStr ? `<div class="progress-session-words">Hard words: ${wordStr}</div>` : ''}
           <div class="progress-session-date">${date}</div>
         </div>`;
     }).join('')}`;
@@ -174,13 +232,20 @@ async function goToWordPractice() {
     return;
   }
 
-  document.getElementById('wordPracticeList').innerHTML = words.map(({ word, count }) =>
-    `<div class="word-practice-row">
-      <div class="word-practice-info">
-        <span class="word-practice-word">${word}</span>
-        <span class="word-practice-count">${count}x struggled</span>
-      </div>
-      <button class="hear-btn" onclick="hearWordInline('${word}')">🔊 Hear it</button>
-    </div>`
-  ).join('');
+  document.getElementById('wordPracticeList').innerHTML = words.map(({ word, count }, i) => {
+    const resultId = `wpResult_${i}`;
+    const btnId = `wpBtn_${i}`;
+    return `
+      <div class="word-practice-row">
+        <div class="word-practice-info">
+          <div class="word-practice-word">${word}</div>
+          <div class="word-practice-count">Struggled ${count} time${count > 1 ? 's' : ''}</div>
+          <div class="word-practice-result-row" id="${resultId}"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0">
+          <button class="hear-btn" onclick="speakTextSlow('${word}')">🔊 Hear it</button>
+          <button class="word-try-btn" id="${btnId}" onclick="practiceWord('${word}','${resultId}','${btnId}')">🎙️ Try it</button>
+        </div>
+      </div>`;
+  }).join('');
 }

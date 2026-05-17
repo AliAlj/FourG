@@ -2,20 +2,37 @@ let bookwormHistory = [];
 let bookwormContext = null;
 let bookwormRecognizer = null;
 let bookwormListening = false;
+let bookwormMemory = '';
 
 function openBookworm(context) {
+  const resumingSameBook = bookwormContext?.title === context.title && bookwormHistory.length > 0;
+
   bookwormContext = context;
-  bookwormHistory = [];
-  document.getElementById('bookwormMessages').innerHTML = '';
+  bookwormMemory = '';
   document.getElementById('bookwormPanel').classList.add('open');
 
-  const greeting = context.score !== null
-    ? `Hi ${context.studentName}! Great job reading "${context.title}" — you scored ${context.score}%! Can you tell me in your own words what that passage was about?`
-    : `Hi ${context.studentName}! I heard you picked "${context.title}" — awesome choice! Before you read it, what do you think it might be about?`;
+  if (resumingSameBook) {
+    // Student pre-chatted about this book, then finished reading — continue the conversation
+    if (context.score !== null) {
+      const bridge = `You just finished reading it and scored ${context.score}%! Now that you've read it, what did you think — did it match what you expected?`;
+      addBookwormBubble(bridge, 'worm');
+      bookwormHistory.push({ role: 'assistant', content: bridge });
+      bookwormSpeak(bridge);
+    }
+  } else {
+    bookwormHistory = [];
+    document.getElementById('bookwormMessages').innerHTML = '';
 
-  addBookwormBubble(greeting, 'worm');
-  bookwormHistory.push({ role: 'assistant', content: greeting });
-  bookwormSpeak(greeting);
+    const greeting = context.score !== null
+      ? `Hi ${context.studentName}! Great job reading "${context.title}" — you scored ${context.score}%! Can you tell me in your own words what that passage was about?`
+      : `Hi ${context.studentName}! I heard you picked "${context.title}" — awesome choice! Before you read it, what do you think it might be about?`;
+
+    addBookwormBubble(greeting, 'worm');
+    bookwormHistory.push({ role: 'assistant', content: greeting });
+    bookwormSpeak(greeting);
+  }
+
+  loadBookwormMemory();
 }
 
 function openBookwormAfterReading() {
@@ -35,6 +52,7 @@ function openBookwormFromLibrary(idx) {
 function closeBookworm() {
   document.getElementById('bookwormPanel').classList.remove('open');
   stopBookwormListening();
+  saveBookwormSession();
 }
 
 function addBookwormBubble(text, role) {
@@ -75,23 +93,33 @@ async function callGroq() {
     ? bookwormContext.difficultWords.join(', ')
     : 'none';
 
+  const memoryBlock = bookwormMemory
+    ? `\n${bookwormMemory}\nUse this history naturally — reference past books when relevant, notice patterns, make the student feel known. Don't recite the history mechanically.`
+    : '';
+
+  const scoreInfo = bookwormContext.score !== null
+    ? `Reading fluency score from this session: ${bookwormContext.score}% (this is a pronunciation and fluency score from the AI speech tool, not a school grade — you have full access to it and should use it)`
+    : 'Reading score: not yet available (student has not read aloud yet)';
+
   const system = `You are Bookworm, a warm and encouraging reading tutor for elementary school students.
 Student name: ${bookwormContext.studentName}, Grade ${bookwormContext.grade}
 Book/passage they read: "${bookwormContext.title}"
 Opening of the passage: "${(bookwormContext.passage || '').substring(0, 250)}"
-${bookwormContext.score !== null ? `Their reading score: ${bookwormContext.score}%` : ''}
-Words they struggled to pronounce: ${difficultList}
+${scoreInfo}
+Words they struggled to pronounce: ${difficultList}${memoryBlock}
 
 Your rules:
 - Keep every reply to 2-3 short sentences max — kids lose focus quickly
 - Use simple, friendly, grade-appropriate language
 - Ask only one question at a time
 - Focus on comprehension: what happened, why, how it connects to their life
+- Reference the student's score naturally when relevant (e.g. "You scored 84% — your fluency is really improving!")
 - If they ask about a word's meaning, explain it simply with an example
 - If they mention a word they found hard to say, give a one-sentence tip (e.g. "Say it in parts: com-mu-ni-ty")
 - Be enthusiastic and positive — never say anything discouraging
 - Use their name occasionally to keep it personal
-- Sound like a fun friend who loves books, not a teacher giving a test`;
+- Sound like a fun friend who loves books, not a teacher giving a test
+- Never say you cannot see or access the student's score — you always have it`;
 
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -118,6 +146,113 @@ Your rules:
     return `That's a great thought, ${bookwormContext.studentName}! What was your favorite part of the passage?`;
   }
 }
+
+// ── Cross-session memory ──────────────────────────────────────────────────────
+
+async function loadBookwormMemory() {
+  bookwormMemory = '';
+  if (!currentStudent?.userId) return;
+
+  try {
+    const [{ data: sessions }, { data: readings }] = await Promise.all([
+      sb.from('bookworm_sessions')
+        .select('book_title, reading_score, summary, created_at')
+        .eq('student_id', currentStudent.userId)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      sb.from('reading_sessions')
+        .select('book_title, overall_score, difficult_words, created_at')
+        .eq('student_id', currentStudent.userId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+    ]);
+
+    const parts = [];
+
+    if (readings && readings.length > 0) {
+      const readingLines = readings.filter(r => r.overall_score != null && !isNaN(r.overall_score)).map(r => {
+        const daysAgo = Math.round((Date.now() - new Date(r.created_at)) / 86400000);
+        const when = daysAgo === 0 ? 'today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
+        const hardWords = r.difficult_words?.length > 0 ? `; struggled with: ${r.difficult_words.slice(0, 3).join(', ')}` : '';
+        return `- ${when}: Read "${r.book_title}" — scored ${r.overall_score}%${hardWords}`;
+      });
+      parts.push(`Student's recent reading assignments:\n${readingLines.join('\n')}`);
+    }
+
+    if (sessions && sessions.length > 0) {
+      const sessionLines = sessions.map(s => {
+        const daysAgo = Math.round((Date.now() - new Date(s.created_at)) / 86400000);
+        const when = daysAgo === 0 ? 'today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
+        return `- ${when}: Chatted about "${s.book_title}". ${s.summary}`;
+      });
+      parts.push(`Past Bookworm conversations:\n${sessionLines.join('\n')}`);
+    }
+
+    if (parts.length > 0) {
+      bookwormMemory = parts.join('\n\n') + '\n\nUse this history naturally — notice improvement trends, reference past books, call out words they keep struggling with. Make the student feel known.';
+    }
+  } catch (err) {
+    console.error('Memory load error:', err);
+  }
+}
+
+async function saveBookwormSession() {
+  // Need at least: greeting + 1 student message + 1 Bookworm reply
+  if (!currentStudent?.userId || bookwormHistory.length < 3) return;
+
+  const summary = await generateSessionSummary();
+  if (!summary) return;
+
+  try {
+    await sb.from('bookworm_sessions').insert({
+      student_id: currentStudent.userId,
+      book_title: bookwormContext?.title || 'Unknown',
+      reading_score: bookwormContext?.score ?? null,
+      summary
+    });
+  } catch (err) {
+    console.error('Memory save error:', err);
+  }
+}
+
+async function generateSessionSummary() {
+  const studentTurns = bookwormHistory.filter(m => m.role === 'user');
+  if (studentTurns.length === 0) return null;
+
+  const convo = bookwormHistory
+    .slice(1) // skip the opening greeting
+    .map(m => `${m.role === 'user' ? currentStudent.name : 'Bookworm'}: ${m.content}`)
+    .join('\n');
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          {
+            role: 'system',
+            content: 'Summarize this reading tutor conversation in 1-2 sentences. Focus on: what the student understood, any words they found hard, and any personal connections they made. Write in third person about the student. Be specific and concrete.'
+          },
+          { role: 'user', content: convo }
+        ],
+        max_tokens: 100,
+        temperature: 0.3
+      })
+    });
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error('Summary generation error:', err);
+    return null;
+  }
+}
+
+// ── TTS & mic ─────────────────────────────────────────────────────────────────
 
 async function bookwormSpeak(text) {
   try {

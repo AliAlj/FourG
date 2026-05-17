@@ -16,16 +16,34 @@ function renderTextAsWordSpans(text, elementId) {
 function highlightWords(recognizedWords, containerId) {
   if (!recognizedWords) return;
   const spans = document.querySelectorAll(`#${containerId} .passage-word`);
+  const WINDOW = 6;
+
   for (const rw of recognizedWords) {
     const clean = rw.Word.toLowerCase().replace(/[^a-z']/g, '');
-    for (let i = wordHighlightPointer; i < spans.length; i++) {
+    if (!clean) continue;
+    const score = rw.PronunciationAssessment?.AccuracyScore ?? 0;
+    const colorClass = score >= 80 ? 'word-good' : score >= 60 ? 'word-ok' : 'word-bad';
+
+    let matched = false;
+    const limit = Math.min(wordHighlightPointer + WINDOW, spans.length);
+    for (let i = wordHighlightPointer; i < limit; i++) {
       const spanClean = spans[i].innerText.toLowerCase().replace(/[^a-z']/g, '');
       if (spanClean === clean) {
-        const score = rw.PronunciationAssessment?.AccuracyScore ?? 0;
-        spans[i].className = 'passage-word ' + (score >= 80 ? 'word-good' : score >= 60 ? 'word-ok' : 'word-bad');
+        // mark any skipped words red (student skipped them)
+        for (let j = wordHighlightPointer; j < i; j++) {
+          spans[j].className = 'passage-word word-bad';
+        }
+        spans[i].className = 'passage-word ' + colorClass;
         wordHighlightPointer = i + 1;
+        matched = true;
         break;
       }
+    }
+
+    // word not found nearby — mark current position red and advance
+    if (!matched && wordHighlightPointer < spans.length) {
+      spans[wordHighlightPointer].className = 'passage-word word-bad';
+      wordHighlightPointer++;
     }
   }
 }
@@ -188,11 +206,13 @@ function finishBook() {
   document.getElementById('passageText').innerText = readerBook.pages.map(p => p.text).join(' ');
   document.getElementById('scoreOverall').innerText = avg;
 
-  showScreen('bookFinishScreen');
+  const fullText = readerBook.pages.map(p => p.text).join(' ');
+  startComprehensionQuiz(fullText, readerBook.title, () => showScreen('bookFinishScreen'));
 }
 
 async function saveReaderPageSession(overall, acc, flu, com, badWords) {
   if (!currentStudent.userId) return;
+  if (overall == null || isNaN(overall)) return;
   try {
     await sb.from('reading_sessions').insert({
       student_id: currentStudent.userId,
@@ -209,6 +229,7 @@ async function saveReaderPageSession(overall, acc, flu, com, badWords) {
 }
 
 function exitBookReader() {
+  stopReadAlong();
   if (readerRecognizer) {
     readerRecognizer.close();
     readerRecognizer = null;
@@ -216,3 +237,78 @@ function exitBookReader() {
   readerIsRecording = false;
   goToLibrary();
 }
+
+// ── Read-Along (Listen First) ──────────────────────────────────────────────
+
+let readAlongActive = false;
+
+function toggleReadAlong(textId, btnId, micBtnId) {
+  if (readAlongActive) {
+    stopReadAlong();
+    resetListenBtn(btnId);
+    return;
+  }
+
+  const container = document.getElementById(textId);
+  const text = container.innerText.trim();
+  if (!text) return;
+
+  renderTextAsWordSpans(text, textId);
+  const spans = Array.from(document.querySelectorAll(`#${textId} .passage-word`));
+  let wordIndex = 0;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.85;
+  utterance.lang = 'en-US';
+
+  utterance.addEventListener('boundary', e => {
+    if (e.name !== 'word') return;
+    if (wordIndex > 0) spans[wordIndex - 1]?.classList.remove('word-current');
+    spans[wordIndex]?.classList.add('word-current');
+    wordIndex++;
+  });
+
+  utterance.onend = () => {
+    spans.forEach(s => s.classList.remove('word-current'));
+    readAlongActive = false;
+    resetListenBtn(btnId);
+    document.getElementById(micBtnId)?.focus();
+  };
+
+  utterance.onerror = () => {
+    readAlongActive = false;
+    resetListenBtn(btnId);
+  };
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  readAlongActive = true;
+
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.textContent = '⏹ Stop listening'; btn.style.background = '#fde8e8'; btn.style.borderColor = '#e74c3c'; btn.style.color = '#c0392b'; }
+}
+
+function stopReadAlong() {
+  window.speechSynthesis.cancel();
+  readAlongActive = false;
+  ['listenAlongBtn', 'readerListenBtn'].forEach(id => resetListenBtn(id));
+  document.querySelectorAll('.word-current').forEach(s => s.classList.remove('word-current'));
+}
+
+function resetListenBtn(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.textContent = '🔊 Listen first';
+  btn.style.background = '';
+  btn.style.borderColor = '';
+  btn.style.color = '';
+}
+
+// ── Tap a word to hear it ─────────────────────────────────────────────────
+
+document.addEventListener('click', e => {
+  const span = e.target.closest('#passageText .word-bad, #passageText .word-ok, #readerText .word-bad, #readerText .word-ok');
+  if (!span) return;
+  const word = span.innerText.replace(/[^a-zA-Z']/g, '').trim();
+  if (word) speakTextSlow(word);
+});

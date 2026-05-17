@@ -82,6 +82,25 @@ async function loadWordData(badWords) {
   } catch { }
 }
 
+async function showRereadHistory(title) {
+  const el = document.getElementById('rereadHistory');
+  if (!el || !currentStudent.userId) return;
+  try {
+    const { data } = await sb.from('reading_sessions')
+      .select('overall_score')
+      .eq('student_id', currentStudent.userId)
+      .eq('book_title', title)
+      .order('created_at', { ascending: true });
+    const valid = (data || []).filter(s => s.overall_score != null && !isNaN(s.overall_score));
+    if (valid.length <= 1) { el.style.display = 'none'; return; }
+    const arrow = valid[valid.length - 1].overall_score > valid[0].overall_score ? '📈' : '';
+    document.getElementById('rereadCount').innerText = `You've read this ${valid.length} times ${arrow}`;
+    document.getElementById('rereadScores').innerText =
+      'Scores: ' + valid.map(s => s.overall_score + '%').join(' → ');
+    el.style.display = 'block';
+  } catch { el.style.display = 'none'; }
+}
+
 function showFeedback(acc, flu, com, overall, badWords) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('scoreAccuracy').innerText = acc;
@@ -94,6 +113,9 @@ function showFeedback(acc, flu, com, overall, badWords) {
               overall >= 60 ? 'Good effort!' : 'Keep practicing!';
   document.getElementById('encouragementText').innerText = enc;
   document.getElementById('aiFeedbackBox').innerText = lastFeedback;
+
+  const title = document.getElementById('passageTitle').innerText;
+  showRereadHistory(title);
 
   if (badWords.length > 0) {
     document.getElementById('wordCardsSection').style.display = 'block';
@@ -132,6 +154,9 @@ async function openWordModal(word, score) {
   scoreEl.style.background = score < 50 ? '#fde8e8' : '#fff3cd';
   scoreEl.style.color = score < 50 ? '#c0392b' : '#856404';
   document.getElementById('modalDefinition').innerText = wd.definition || 'Loading...';
+  document.getElementById('modalPracticeResult').innerHTML = '';
+  document.getElementById('modalTryBtn').textContent = '🎙️ Try saying it';
+  document.getElementById('modalTryBtn').disabled = false;
   document.getElementById('wordModal').classList.add('open');
 }
 
@@ -142,6 +167,7 @@ async function hearWordInline(word) { await speakTextSlow(word); }
 async function speakFeedback() { if (lastFeedback) await speakText(lastFeedback); }
 
 async function saveSession(acc, flu, com, overall, badWords) {
+  if (overall == null || isNaN(overall)) return;
   const title = document.getElementById('passageTitle').innerText;
   const difficultWordNames = badWords.map(w => w.Word);
 

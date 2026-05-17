@@ -80,5 +80,11 @@ function resetReadingState() {
   isRecording = false;
 }
 
-function tryAgain() { resetReadingState(); }
+function tryAgain() {
+  stopReadAlong();
+  resetReadingState();
+  const el = document.getElementById('passageText');
+  if (el && el.innerText.trim()) renderTextAsWordSpans(el.innerText, 'passageText');
+  document.getElementById('rereadHistory').style.display = 'none';
+}
 function nextPassage() { goToLibrary(); }

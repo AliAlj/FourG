@@ -19,22 +19,60 @@ async function loadLibraryBooks() {
     }
   } catch { }
   currentAssignments = [];
+  currentCompletedBooks = new Set();
   if (currentClassCode) {
     try {
-      const { data: asgn } = await sb.from('assignments').select('book_title').eq('class_code', currentClassCode);
-      currentAssignments = (asgn || []).map(a => a.book_title.toLowerCase());
+      const { data: asgn } = await sb.from('assignments')
+        .select('book_title, due_date')
+        .eq('class_code', currentClassCode);
+      currentAssignments = asgn || [];
+    } catch {}
+  }
+  if (currentStudent?.userId) {
+    try {
+      const { data: done } = await sb.from('reading_sessions')
+        .select('book_title')
+        .eq('student_id', currentStudent.userId);
+      currentCompletedBooks = new Set((done || []).map(s => s.book_title.toLowerCase()));
     } catch {}
   }
   document.getElementById('libraryLoading').style.display = 'none';
   renderLibrary(allBooks, currentLibraryFilter);
 }
 
+function findAssignment(title) {
+  return currentAssignments.find(a => a.book_title.toLowerCase() === title.toLowerCase()) || null;
+}
+
+function assignedBadgeHtml(title) {
+  const asgn = findAssignment(title);
+  if (!asgn) return '';
+
+  if (currentCompletedBooks.has(title.toLowerCase())) {
+    return '<span class="source-assigned-badge assign-done">📌 ✓ Done</span>';
+  }
+
+  if (!asgn.due_date) return '<span class="source-assigned-badge">📌 Assigned</span>';
+
+  const due = new Date(asgn.due_date + 'T00:00:00');
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const daysUntil = Math.round((due - today) / 86400000);
+
+  if (daysUntil < 0)  return '<span class="source-assigned-badge assign-overdue">📌 Overdue</span>';
+  if (daysUntil === 0) return '<span class="source-assigned-badge assign-urgent">📌 Due today!</span>';
+  if (daysUntil === 1) return '<span class="source-assigned-badge assign-urgent">📌 Due tomorrow</span>';
+  if (daysUntil <= 4) return `<span class="source-assigned-badge assign-soon">📌 Due in ${daysUntil} days</span>`;
+
+  const label = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `<span class="source-assigned-badge">📌 Due ${label}</span>`;
+}
+
 function renderLibrary(books, gradeFilter) {
   libraryBooks = books;
   const eligible = books.filter(b => b.grade <= currentStudent.grade);
   const sorted = [...eligible].sort((a, b) => {
-    const aAssigned = currentAssignments.includes(a.title.toLowerCase()) ? 1 : 0;
-    const bAssigned = currentAssignments.includes(b.title.toLowerCase()) ? 1 : 0;
+    const aAssigned = findAssignment(a.title) ? 1 : 0;
+    const bAssigned = findAssignment(b.title) ? 1 : 0;
     return bAssigned - aAssigned;
   });
   const filtered = gradeFilter ? sorted.filter(b => b.grade === gradeFilter) : sorted;
@@ -57,8 +95,7 @@ function renderLibrary(books, gradeFilter) {
       ? '<span class="source-teacher-badge">Teacher</span>' : '';
     const illustratedBadge = book.source === 'illustrated'
       ? '<span class="source-illustrated-badge">🖼️ Illustrated</span>' : '';
-    const assignedBadge = currentAssignments.includes(book.title.toLowerCase())
-      ? '<span class="source-assigned-badge">📌 Assigned</span>' : '';
+    const assignedBadge = assignedBadgeHtml(book.title);
     const coverHtml = book.cover_url
       ? `<div class="book-card-img-container">
           <img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">

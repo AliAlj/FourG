@@ -170,4 +170,57 @@ function stopRecording() {
   recognizer.stopContinuousRecognitionAsync(() => {}, err => console.error(err));
 }
 
+// ── Single-word pronunciation practice ───────────────────────────────────────
+
+function practiceWord(word, resultElId, btnId) {
+  const resultEl = document.getElementById(resultElId);
+  const btn = document.getElementById(btnId);
+  if (!resultEl || !btn) return;
+
+  btn.disabled = true;
+  btn.textContent = '👂 Listening...';
+  resultEl.innerHTML = '';
+
+  try {
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
+    speechConfig.speechRecognitionLanguage = 'en-US';
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    const pronConfig = new SpeechSDK.PronunciationAssessmentConfig(
+      word,
+      SpeechSDK.PronunciationAssessmentGradingSystem.HundredMark,
+      SpeechSDK.PronunciationAssessmentGranularity.Word,
+      true
+    );
+    const rec = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+    pronConfig.applyTo(rec);
+
+    rec.recognizeOnceAsync(result => {
+      rec.close();
+      btn.disabled = false;
+      btn.textContent = '🎙️ Try again';
+
+      if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        const pr = SpeechSDK.PronunciationAssessmentResult.fromResult(result);
+        const score = Math.round(pr.accuracyScore);
+        const color = score >= 85 ? '#2e7d32' : score >= 65 ? '#e65100' : '#c62828';
+        const msg = score >= 85 ? 'Great pronunciation!' : score >= 65 ? 'Getting there!' : 'Keep practicing!';
+        resultEl.innerHTML = `
+          <span class="word-practice-score" style="color:${color}">${score}%</span>
+          <span class="word-practice-msg">${msg}</span>`;
+      } else {
+        resultEl.innerHTML = `<span class="word-practice-msg" style="color:#aaa">Didn't catch that — try again</span>`;
+      }
+    }, () => {
+      rec.close();
+      btn.disabled = false;
+      btn.textContent = '🎙️ Try again';
+      resultEl.innerHTML = `<span class="word-practice-msg" style="color:#aaa">Could not record — try again</span>`;
+    });
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🎙️ Try again';
+    resultEl.innerHTML = `<span class="word-practice-msg" style="color:#aaa">Microphone error</span>`;
+  }
+}
+
 
