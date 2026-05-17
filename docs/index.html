@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MichiganReads AI — Reading Confidence for Every Student</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:  #1a3a5c;
+      --gold:  #f0a500;
+      --green: #2e7d32;
+      --light: #f5f7ff;
+      --text:  #222;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+      background: white;
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1.5px solid #eee;
+      padding: 0.9rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-cta {
+      background: var(--navy);
+      color: white;
+      border: none;
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #0d2540 100%);
+      color: white;
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(240,165,0,0.2);
+      border: 1.5px solid var(--gold);
+      color: var(--gold);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.3rem 0.9rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.04em;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.15;
+      max-width: 700px;
+      margin: 0 auto 1.25rem;
+    }
+    .hero h1 span { color: var(--gold); }
+    .hero p {
+      font-size: 1.1rem;
+      opacity: 0.85;
+      max-width: 560px;
+      margin: 0 auto 2rem;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 2px solid rgba(255,255,255,0.4);
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* ── Stats ── */
+    .stats {
+      background: var(--gold);
+      padding: 2.5rem 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 4rem;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--navy);
+      display: block;
+    }
+    .stat-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--navy);
+      opacity: 0.75;
+    }
+
+    /* ── Sections ── */
+    section { padding: 4.5rem 2rem; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 900;
+      color: var(--navy);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+    .section-sub {
+      font-size: 1rem;
+      color: #555;
+      max-width: 580px;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Problem ── */
+    .problem { background: var(--light); }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+    .problem-card {
+      background: white;
+      border-radius: 14px;
+      padding: 1.5rem;
+      border-left: 4px solid var(--gold);
+    }
+    .problem-card-num {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--gold);
+    }
+    .problem-card p {
+      font-size: 0.9rem;
+      color: #444;
+      margin-top: 0.35rem;
+    }
+
+    /* ── How it works ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .step {
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+    .step-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+    .step h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 0.4rem;
+    }
+    .step p { font-size: 0.85rem; color: #666; }
+    .step-num {
+      display: inline-block;
+      background: var(--navy);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-size: 0.78rem;
+      font-weight: 800;
+      line-height: 28px;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Features ── */
+    .features { background: var(--light); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .feature-card {
+      background: white;
+      border-radius: 14px;
+      padding: 1.5rem;
+      border: 1.5px solid #e8edf5;
+    }
+    .feature-icon { font-size: 1.8rem; margin-bottom: 0.75rem; }
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 0.4rem;
+    }
+    .feature-card p { font-size: 0.85rem; color: #555; line-height: 1.5; }
+    .feature-tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3949ab;
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+    }
+    .feature-tag.green { background: #e8f5e9; color: var(--green); }
+    .feature-tag.gold  { background: #fff8e1; color: #b8860b; }
+
+    /* ── For teachers ── */
+    .teacher-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .teacher-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .teacher-item-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .teacher-item h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .teacher-item p { font-size: 0.82rem; color: #666; }
+
+    /* ── Tech ── */
+    .tech { background: var(--navy); color: white; }
+    .tech h2 { color: white; }
+    .tech .section-sub { color: rgba(255,255,255,0.7); }
+    .tech-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .tech-chip {
+      background: rgba(255,255,255,0.1);
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      text-align: center;
+    }
+    .tech-chip-name {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--gold);
+    }
+    .tech-chip-desc {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.65);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Detroit ── */
+    .detroit {
+      background: linear-gradient(135deg, #1b4332 0%, #0d2540 100%);
+      color: white;
+      text-align: center;
+      padding: 5rem 2rem;
+    }
+    .detroit h2 { color: white; margin-bottom: 1rem; }
+    .detroit p {
+      color: rgba(255,255,255,0.8);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      font-size: 1.05rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: #111;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.82rem;
+    }
+    footer span { color: var(--gold); }
+
+    @media (max-width: 600px) {
+      .stats { gap: 2rem; }
+      nav { padding: 0.75rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">Michigan<span>Reads</span> AI</div>
+  <a class="nav-cta" href="https://github.com/AliAlj/FourG" target="_blank">View on GitHub</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">Built for Michigan Students</div>
+  <h1>Every child deserves to read with <span>confidence</span></h1>
+  <p>MichiganReads AI uses IBM Granite and Azure Speech to score pronunciation, give personalized feedback, and help struggling readers catch up — in English and Spanish.</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="https://github.com/AliAlj/FourG" target="_blank">See the Project</a>
+    <a class="btn-outline" href="#how-it-works">How it works</a>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <span class="stat-num">1 in 3</span>
+    <span class="stat-label">Michigan 3rd graders read<br>below grade level</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">#1</span>
+    <span class="stat-label">Arab-American population<br>in Metro Detroit</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">2 languages</span>
+    <span class="stat-label">English & Spanish support<br>for English learners</span>
+  </div>
+</div>
+
+<!-- Problem -->
+<section class="problem">
+  <div class="container">
+    <div class="section-label">The Problem</div>
+    <h2>Reading gaps are invisible until it's too late</h2>
+    <p class="section-sub">Teachers can't sit with every student every day. Students who struggle often fall further behind in silence — especially English language learners.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-card-num">68%</div>
+        <p>of Detroit-area students score below proficient in reading by 4th grade</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card-num">No feedback</div>
+        <p>Most reading apps tell students their score but not why — or how to improve</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-card-num">Hidden struggle</div>
+        <p>Students who score okay but feel lost — teachers can't see what they can't measure</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2>Read. Score. Improve.</h2>
+    <p class="section-sub">A complete reading loop — from passage to personalized feedback in under 2 minutes.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <span class="step-icon">📖</span>
+        <h3>Pick a passage</h3>
+        <p>Teacher-curated library with grade-level classification powered by IBM Granite</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <span class="step-icon">🎙️</span>
+        <h3>Read out loud</h3>
+        <p>Azure Speech scores accuracy, fluency, and completeness word by word in real time</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <span class="step-icon">🤖</span>
+        <h3>Get AI feedback</h3>
+        <p>IBM Granite writes warm, personalized feedback calibrated to the student's score level</p>
+      </div>
+      <div class="step">
+        <span class="step-num">4</span>
+        <span class="step-icon">📚</span>
+        <h3>Practice hard words</h3>
+        <p>Animated syllable cards with definitions help students decode exactly what tripped them up</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2>Built for struggling readers</h2>
+    <p class="section-sub">Every feature is designed around one goal — helping kids who are behind catch up faster.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Pronunciation Scoring</h3>
+        <p>Azure Speech SDK scores every word for accuracy, fluency, and completeness — not just overall performance.</p>
+        <span class="feature-tag">Azure Speech</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Personalized AI Feedback</h3>
+        <p>IBM Granite writes warm, age-appropriate feedback with 5 tiers — from celebrating a 95% to keeping a 30% student from giving up.</p>
+        <span class="feature-tag">IBM Granite 4</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Phonics Pattern Groups</h3>
+        <p>Mispronounced words are grouped by phonics pattern — so students learn the rule, not just the word.</p>
+        <span class="feature-tag gold">Unique Feature</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🐛</div>
+        <h3>Bookworm AI Tutor</h3>
+        <p>A conversational reading tutor that asks comprehension questions, drills tough words, and tracks how confident students feel.</p>
+        <span class="feature-tag">IBM Granite 4</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🇲🇽</div>
+        <h3>Spanish Language Support</h3>
+        <p>Spanish-speaking students read English passages and receive all feedback in Spanish — so language isn't a barrier to learning.</p>
+        <span class="feature-tag green">Detroit-Focused</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔤</div>
+        <h3>Syllable Animation</h3>
+        <p>Word cards break mispronounced words into syllables that light up one by one as the word is spoken slowly.</p>
+        <span class="feature-tag gold">Engaging for Kids</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Teacher -->
+<section>
+  <div class="container">
+    <div class="section-label">For Teachers</div>
+    <h2>See your whole class at a glance</h2>
+    <p class="section-sub">Teachers get a real-time view of who's reading, who's struggling, and what to teach next.</p>
+    <div class="teacher-features">
+      <div class="teacher-item">
+        <div class="teacher-item-icon">🔴</div>
+        <div>
+          <h4>Live Dashboard</h4>
+          <p>See which students are reading right now with a pulsing live indicator</p>
+        </div>
+      </div>
+      <div class="teacher-item">
+        <div class="teacher-item-icon">⚠️</div>
+        <div>
+          <h4>At-Risk Detection</h4>
+          <p>Students who scored below 60% twice or haven't read in 7 days are flagged automatically</p>
+        </div>
+      </div>
+      <div class="teacher-item">
+        <div class="teacher-item-icon">🫣</div>
+        <div>
+          <h4>Hidden Struggle</h4>
+          <p>Students who score well but tell Bookworm they found it hard are surfaced for follow-up</p>
+        </div>
+      </div>
+      <div class="teacher-item">
+        <div class="teacher-item-icon">✏️</div>
+        <div>
+          <h4>AI Lesson Plans</h4>
+          <p>One click generates a 10-minute vocabulary lesson targeting your class's most common difficult words</p>
+        </div>
+      </div>
+      <div class="teacher-item">
+        <div class="teacher-item-icon">📧</div>
+        <div>
+          <h4>Weekly Parent Summaries</h4>
+          <p>IBM Granite writes a personalized reading update for each student, ready to copy into an email</p>
+        </div>
+      </div>
+      <div class="teacher-item">
+        <div class="teacher-item-icon">📊</div>
+        <div>
+          <h4>Reading Level Match</h4>
+          <p>IBM Granite classifies every passage by grade level and warns if a book is too hard for a student</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tech -->
+<section class="tech">
+  <div class="container">
+    <div class="section-label">Technology</div>
+    <h2>Powered by enterprise AI</h2>
+    <p class="section-sub">Built on production-grade APIs — not toys. Every reading session runs through real speech AI and language models.</p>
+    <div class="tech-grid">
+      <div class="tech-chip">
+        <div class="tech-chip-name">IBM Granite 4</div>
+        <div class="tech-chip-desc">Feedback, definitions, lesson plans, reading level classification</div>
+      </div>
+      <div class="tech-chip">
+        <div class="tech-chip-name">Azure Speech SDK</div>
+        <div class="tech-chip-desc">Word-level pronunciation scoring and text-to-speech</div>
+      </div>
+      <div class="tech-chip">
+        <div class="tech-chip-name">Supabase</div>
+        <div class="tech-chip-desc">Real-time database, auth, Edge Functions, live subscriptions</div>
+      </div>
+      <div class="tech-chip">
+        <div class="tech-chip-name">Vanilla JS</div>
+        <div class="tech-chip-desc">No framework overhead — fast, lightweight, runs anywhere</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Detroit -->
+<section class="detroit">
+  <div class="container">
+    <h2>Built for Detroit. Built for Michigan.</h2>
+    <p>Metro Detroit is home to the largest Arab-American community in the United States and a growing Spanish-speaking population. MichiganReads AI was built with these students in mind — because every child deserves a reading tool that meets them where they are.</p>
+    <a class="btn-primary" href="https://github.com/AliAlj/FourG" target="_blank">View on GitHub</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>Built for the <span>Michigan Hackathon 2026</span> · MichiganReads AI · Powered by IBM Granite &amp; Azure Speech</p>
+</footer>
+
+</body>
+</html>
