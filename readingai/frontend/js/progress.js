@@ -111,29 +111,108 @@ function renderProgressStats(valid) {
     </div>`;
 }
 
+let _progressChartInstance = null;
+
 function renderProgressChart(valid) {
-  const recent = valid.slice(0, 10).reverse();
-  if (recent.length < 2) return;
-  const scoreColor = sc => sc >= 90 ? '#2e7d32' : sc >= 75 ? '#1a3a5c' : sc >= 60 ? '#e65100' : '#c62828';
-  const bars = recent.map((s, i) => {
-    const color = scoreColor(s.overall_score);
-    const title = s.book_title.replace(/ \(Page \d+\)$/, '');
-    const short = title.length > 10 ? title.substring(0, 10) + '…' : title;
-    const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const delay = `${i * 0.07}s`;
-    return `
-      <div class="progress-bar-col">
-        <div class="progress-bar-score" style="color:${color}">${s.overall_score}%</div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="--h:${s.overall_score}%;background:${color};--delay:${delay}"></div>
-        </div>
-        <div class="progress-bar-label">${short}</div>
-        <div class="progress-bar-date">${date}</div>
-      </div>`;
-  }).join('');
-  document.getElementById('progressLevel').innerHTML = `
-    <h3 style="margin:1.5rem 0 0.75rem;font-size:0.95rem;color:#555">Score History</h3>
-    <div class="progress-chart">${bars}</div>`;
+  const wrap = document.getElementById('progressChartWrap');
+  const canvas = document.getElementById('progressChart');
+  if (!wrap || !canvas || valid.length < 2) return;
+
+  const recent = valid.slice(0, 10).reverse(); // oldest → newest left to right
+  const labels = recent.map(s =>
+    new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  );
+
+  if (_progressChartInstance) { _progressChartInstance.destroy(); _progressChartInstance = null; }
+  wrap.style.display = 'block';
+
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 220);
+  grad.addColorStop(0, 'rgba(240,165,0,0.25)');
+  grad.addColorStop(1, 'rgba(240,165,0,0)');
+
+  // Target line at 85 as a flat dataset
+  const targetData = recent.map(() => 85);
+
+  _progressChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Overall',
+          data: recent.map(s => s.overall_score),
+          borderColor: '#f0a500',
+          backgroundColor: grad,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointBackgroundColor: '#f0a500',
+          fill: true,
+          tension: 0.35,
+          order: 1
+        },
+        {
+          label: 'Accuracy',
+          data: recent.map(s => s.accuracy_score ?? null),
+          borderColor: '#1a3a5c',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.35,
+          order: 2
+        },
+        {
+          label: 'Fluency',
+          data: recent.map(s => s.fluency_score ?? null),
+          borderColor: '#2e7d32',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.35,
+          order: 2
+        },
+        {
+          label: 'Target (85%)',
+          data: targetData,
+          borderColor: 'rgba(46,125,50,0.35)',
+          borderWidth: 1,
+          borderDash: [6, 5],
+          pointRadius: 0,
+          backgroundColor: 'transparent',
+          fill: false,
+          order: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 11 }, padding: 10, boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y}%` }
+        }
+      },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          ticks: { callback: v => v + '%', font: { size: 11 }, stepSize: 20 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          ticks: { font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
 }
 
 function renderReadingLevel(valid) {

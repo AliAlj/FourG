@@ -107,7 +107,7 @@ async function handleStudentMessage(text) {
 
   let reply;
   try {
-    reply = await callGroq();
+    reply = await callIBM();
   } catch {
     reply = `That's a great thought! What else is on your mind?`;
   } finally {
@@ -186,7 +186,7 @@ function handleConfidenceChoice(level) {
   bookwormSpeak(reply);
 }
 
-async function callGroq() {
+async function callIBM() {
   const difficultList = bookwormContext.difficultWords?.length > 0
     ? bookwormContext.difficultWords.join(', ')
     : 'none';
@@ -227,30 +227,15 @@ Your rules:
 - Sound like a fun friend who loves books, not a teacher giving a test
 - Never say you cannot see or access the student's score — you always have it`;
 
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-          { role: 'system', content: system },
-          ...bookwormHistory
-        ],
-        max_tokens: 120,
-        temperature: 0.7
-      })
-    });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content
-      || `That's a great thought, ${bookwormContext.studentName}! What was your favorite part of the passage?`;
-  } catch (err) {
-    console.error('Groq error:', err);
-    return `That's a great thought, ${bookwormContext.studentName}! What was your favorite part of the passage?`;
-  }
+  const { data, error } = await sb.functions.invoke('ibm-chat', {
+    body: {
+      messages: [{ role: 'system', content: system }, ...bookwormHistory],
+      max_tokens: 120,
+      project_id: IBM_PROJECT_ID
+    }
+  });
+  if (error || !data?.content) throw new Error(error || 'No content');
+  return data.content;
 }
 
 // ── Cross-session memory ──────────────────────────────────────────────────────
@@ -350,14 +335,8 @@ async function generateSessionSummary() {
     .join('\n');
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+    const { data, error } = await sb.functions.invoke('ibm-chat', {
+      body: {
         messages: [
           {
             role: 'system',
@@ -366,11 +345,11 @@ async function generateSessionSummary() {
           { role: 'user', content: convo }
         ],
         max_tokens: 100,
-        temperature: 0.3
-      })
+        project_id: IBM_PROJECT_ID
+      }
     });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || null;
+    if (error || !data?.content) return null;
+    return data.content.trim() || null;
   } catch (err) {
     console.error('Summary generation error:', err);
     return null;
