@@ -6,6 +6,7 @@
 <title>MichiganReads AI</title>
 <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="splash-active">
@@ -211,6 +212,10 @@
       </div>
       <div id="progressStreak"></div>
       <div id="progressStats"></div>
+      <div id="progressChartWrap" style="display:none;margin:1.25rem 0">
+        <h3 style="font-size:0.95rem;color:#555;margin-bottom:0.75rem">Score Over Time</h3>
+        <canvas id="progressChart" height="180"></canvas>
+      </div>
       <div id="progressLevel"></div>
       <div id="progressWordBtn"></div>
       <div id="progressList"></div>
