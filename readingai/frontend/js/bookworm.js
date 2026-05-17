@@ -223,6 +223,35 @@ async function handleStudentMessage(text) {
     document.getElementById('bookwormTyping')?.remove();
   }
 
+function showConfidenceButtons() {
+  bookwormConfidenceAsked = true;
+  const messages = document.getElementById('bookwormMessages');
+  const el = document.createElement('div');
+  el.className = 'bookworm-bubble worm';
+  el.id = 'confidenceBubble';
+  el.innerHTML = `How did reading feel today?
+    <div class="confidence-btns">
+      <button onclick="handleConfidenceChoice('easy')">😊 Easy</button>
+      <button onclick="handleConfidenceChoice('medium')">😐 Medium</button>
+      <button onclick="handleConfidenceChoice('hard')">😓 Hard</button>
+    </div>`;
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function handleConfidenceChoice(level) {
+  bookwormConfidenceLevel = level;
+  document.getElementById('confidenceBubble')?.remove();
+  const label = level === 'easy' ? '😊 Easy' : level === 'medium' ? '😐 Medium' : '😓 Hard';
+  addBookwormBubble(label, 'student');
+  bookwormHistory.push({ role: 'user', content: `Reading felt ${level} today.` });
+
+  const replies = {
+    easy: `That's awesome — feeling confident means you're growing as a reader! 📚 What part of the passage did you like best?`,
+    medium: `Medium is totally fine — that means you're being challenged in just the right way! What was the trickiest part?`,
+    hard: `Thank you for being honest — hard readings are how we get stronger! What made it feel difficult?`
+  };
+  const reply = replies[level];
   addBookwormBubble(reply, 'worm');
   bookwormHistory.push({ role: 'assistant', content: reply });
   bookwormSpeak(reply);
@@ -533,3 +562,5 @@ function stopBookwormListening() {
   if (btn) btn.classList.remove('listening');
   if (input) input.placeholder = 'Type or tap 🎙️ to speak...';
 }
+
+

@@ -229,3 +229,5 @@ function openStudentDetail(session) {
 }
 
 function closeStudentModal() { document.getElementById('studentModal').classList.remove('open'); }
+
+

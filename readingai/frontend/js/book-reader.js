@@ -314,3 +314,5 @@ document.addEventListener('click', e => {
   const word = span.innerText.replace(/[^a-zA-Z']/g, '').trim();
   if (word) speakTextSlow(word);
 });
+
+
