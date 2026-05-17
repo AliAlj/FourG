@@ -176,7 +176,7 @@ ${sessionLines}
 The student just asked: "What are my reading scores so far?"
 Respond warmly in 3-4 sentences using only the exact numbers above. Highlight their best score and average. Encourage them. Do not mention any book, score, or streak not listed above.`;
 
-    const res = await fetch('http://localhost:5000/api/bookworm', {
+    const res = await fetch('https://fourg-44vh.onrender.com/api/bookworm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

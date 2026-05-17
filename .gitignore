@@ -1,5 +1,4 @@
 .DS_Store
-readingai/frontend/config.js
 node_modules/
 .env
 .env.local
