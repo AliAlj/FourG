@@ -123,10 +123,14 @@ function copyCode(code) {
 }
 
 async function openClassDashboard(code, name) {
-  const { data } = await sb.from('student_sessions')
-    .select('*')
-    .order('created_at', { ascending: false });
-  allSessions = data || [];
+  try {
+    const { data } = await sb.from('student_sessions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    allSessions = data || [];
+  } catch {
+    allSessions = [];
+  }
 
   document.getElementById('studentsDashboard').style.display = 'block';
   document.getElementById('dashboardHeader').innerHTML = `
