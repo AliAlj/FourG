@@ -1,3 +1,13 @@
+function setLanguage(lang) {
+  currentLanguage = lang;
+  localStorage.setItem('preferredLanguage', lang);
+  document.getElementById('langEn')?.classList.toggle('lang-active', lang === 'en');
+  document.getElementById('langEs')?.classList.toggle('lang-active', lang === 'es');
+  document.querySelectorAll('[data-en][data-es]').forEach(el => {
+    el.textContent = lang === 'es' ? el.dataset.es : el.dataset.en;
+  });
+}
+
 function showScreen(id) {
   const currentScreen = document.querySelector('.screen.active');
   const nextScreen = document.getElementById(id);
@@ -5,26 +15,20 @@ function showScreen(id) {
   if (currentScreen === nextScreen) return;
 
   if (currentScreen) {
-    currentScreen.style.opacity = "0";
+    currentScreen.style.opacity = '0';
+    currentScreen.style.transform = 'translateY(-12px)';
+    currentScreen.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
 
     setTimeout(() => {
       currentScreen.classList.remove('active');
+      currentScreen.style.opacity = '';
+      currentScreen.style.transform = '';
+      currentScreen.style.transition = '';
 
       nextScreen.classList.add('active');
-
-      nextScreen.style.opacity = "0";
-
-      setTimeout(() => {
-        nextScreen.style.opacity = "1";
-      }, 50);
-
-    }, 500);
+    }, 230);
   } else {
     nextScreen.classList.add('active');
-
-    setTimeout(() => {
-      nextScreen.style.opacity = "1";
-    }, 50);
   }
 
   document.body.classList.toggle('splash-active', id === 'loadingScreen');
@@ -32,6 +36,8 @@ function showScreen(id) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  // Restore saved language preference
+  setLanguage(currentLanguage);
   setTimeout(() => {
     if (!sessionRestored) showScreen('roleScreen');
   }, 2200);
@@ -78,7 +84,14 @@ function resetReadingState() {
   document.getElementById('feedbackCard').style.display = 'none';
   document.getElementById('speakingBar').classList.remove('active');
   isRecording = false;
+  cleanupRecordingAudio();
 }
 
-function tryAgain() { resetReadingState(); }
+function tryAgain() {
+  stopReadAlong();
+  resetReadingState();
+  const el = document.getElementById('passageText');
+  if (el && el.innerText.trim()) renderTextAsWordSpans(el.innerText, 'passageText');
+  document.getElementById('rereadHistory').style.display = 'none';
+}
 function nextPassage() { goToLibrary(); }

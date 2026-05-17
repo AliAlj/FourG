@@ -9,6 +9,7 @@ const SUPABASE_ANON_KEY = CONFIG.SUPABASE_ANON_KEY;
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let currentLanguage = localStorage.getItem('preferredLanguage') || 'en';
 let sessionRestored = false;
 let currentStudent = {};
 let currentClassCode = '';
